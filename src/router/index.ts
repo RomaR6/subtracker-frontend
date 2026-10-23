@@ -6,6 +6,11 @@ const router = createRouter({
   history: createWebHistory(),
   routes: [
     {
+      path: "/",
+      name: "landing",
+      component: () => import("../views/LandingView.vue")
+    },
+    {
       path: "/login",
       name: "login",
       component: () => import("../views/LoginView.vue"),
@@ -23,7 +28,7 @@ const router = createRouter({
       component: () => import("../views/AcceptInviteView.vue")
     },
     {
-      path: "/",
+      path: "/app",
       component: AppLayout,
       meta: { requiresAuth: true },
       children: [
@@ -76,8 +81,32 @@ const router = createRouter({
       ]
     },
     {
+      path: "/dashboard",
+      redirect: "/app/dashboard"
+    },
+    {
+      path: "/subscriptions",
+      redirect: "/app/subscriptions"
+    },
+    {
+      path: "/requests",
+      redirect: "/app/requests"
+    },
+    {
+      path: "/analytics",
+      redirect: "/app/analytics"
+    },
+    {
+      path: "/team",
+      redirect: "/app/team"
+    },
+    {
+      path: "/settings",
+      redirect: "/app/settings"
+    },
+    {
       path: "/:pathMatch(.*)*",
-      redirect: "/dashboard"
+      redirect: "/"
     }
   ]
 });
@@ -90,6 +119,11 @@ router.beforeEach(async (to, _, next) => {
   }
 
   const isAuth = authStore.isAuthenticated;
+
+  // Якщо авторизований користувач переходить на головну сторінку лендингу, перенаправляємо його на дашборд
+  if (to.path === "/" && isAuth) {
+    return next({ name: "dashboard" });
+  }
 
   if (to.meta.requiresAuth && !isAuth) {
     return next({ name: "login" });
