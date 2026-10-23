@@ -1,436 +1,128 @@
-﻿<template>
-  <div class="dashboard-page">
-    <div class="dash-header">
-      <div class="dash-title">
-        <h1>Зведена аналітика та фінансовий моніторинг</h1>
-        <p>Оперативний огляд витрат робочого простору за жовтень 2026 року</p>
-      </div>
-      <div class="dash-date-picker">
-        <span>Поточний місяць: Жовтень 2026 ▼</span>
-      </div>
-    </div>
+<script setup lang="ts">
+import { ref, onMounted } from "vue";
+import api from "../api/axios";
 
-    <div class="kpi-grid">
-      <div class="kpi-card">
-        <div class="kpi-top">
-          <span class="kpi-label">Місячні витрати</span>
-          <span class="kpi-icon-pill" style="background: #ffe4e6; color: #9f1239;">₴</span>
-        </div>
-        <div class="kpi-value">₴{{ store.summary.monthly_budget_uah.toLocaleString() }}</div>
-        <div class="kpi-sub positive">+4.2% порівняно з вереснем ($3,440)</div>
-      </div>
+const summary = ref<any>(null);
+const isLoading = ref(true);
 
-      <div class="kpi-card">
-        <div class="kpi-top">
-          <span class="kpi-label">Активні ліцензії</span>
-          <span class="kpi-icon-pill" style="background: #fef3c7; color: #b45309;">28</span>
-        </div>
-        <div class="kpi-value">28 сервісів</div>
-        <div class="kpi-sub" style="color: #047857;">100% закріплено за командою</div>
-      </div>
+onMounted(async () => {
+  try {
+    const res = await api.get("/subscriptions/summary?workspace_id=1");
+    summary.value = res.data;
+  } catch (err) {
+    console.error(err);
+  } finally {
+    isLoading.value = false;
+  }
+});
+</script>
 
-      <div class="kpi-card">
-        <div class="kpi-top">
-          <span class="kpi-label">Заявки на розгляд</span>
-          <span class="kpi-icon-pill" style="background: #ffedd5; color: #c2410c;">3</span>
-        </div>
-        <div class="kpi-value">3 очікують</div>
-        <div class="kpi-sub" style="color: #b45309;">₴18,500 бюджет нових запитів</div>
+<template>
+  <div class="space-y-6">
+    <div class="flex justify-between items-end">
+      <div class="text-left">
+        <h1 class="text-2xl font-black text-[#1e293b]">Зведена аналітика та фінансовий моніторинг</h1>
+        <p class="text-xs text-[#78716C] mt-1">Оперативний огляд витрат робочого простору за жовтень 2026 року</p>
       </div>
-
-      <div class="kpi-card">
-        <div class="kpi-top">
-          <span class="kpi-label">Середній чек / спеціаліст</span>
-          <span class="kpi-icon-pill" style="background: #f5f5f4; color: #78716c;">👤</span>
-        </div>
-        <div class="kpi-value">₴5,100 / міс</div>
-        <div class="kpi-sub" style="color: #78716c;">Штат команди: 28 інженерів</div>
+      <div class="text-xs font-bold text-[#78716C] bg-white border border-[#E7E5E4] px-3 py-1.5 rounded-lg shadow-xs">
+        Поточний місяць: Жовтень 2026 ▼
       </div>
     </div>
 
-    <div class="charts-row">
-      <div class="chart-box">
-        <div class="box-head">
-          <h3>Динаміка витрат та прогноз (Cash Flow)</h3>
-          <span class="box-tag">UAH / Останні 6 місяців</span>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div class="bg-white border border-[#E7E5E4] p-5 rounded-2xl shadow-xs text-left">
+        <div class="flex justify-between items-start">
+          <span class="text-xs font-bold text-[#78716C]">Місячні витрати</span>
+          <span class="w-6 h-6 rounded-full bg-[#FEF2F2] text-[#881337] flex items-center justify-center text-xs font-bold">₴</span>
         </div>
-        <div class="bars-container">
-          <div class="bar-col"><div class="bar-fill" style="height: 60%;"></div><span>Травень</span></div>
-          <div class="bar-col"><div class="bar-fill" style="height: 70%;"></div><span>Червень</span></div>
-          <div class="bar-col"><div class="bar-fill" style="height: 78%;"></div><span>Липень</span></div>
-          <div class="bar-col"><div class="bar-fill" style="height: 85%;"></div><span>Серпень</span></div>
-          <div class="bar-col"><div class="bar-fill" style="height: 92%;"></div><span>Вересень</span></div>
-          <div class="bar-col"><div class="bar-fill active-bar" style="height: 100%;"></div><span class="active-txt">Жовтень</span></div>
-          <div class="bar-col"><div class="bar-fill forecast-bar" style="height: 80%;"></div><span>Листопад *</span></div>
+        <div class="text-2xl font-black text-[#1e293b] mt-3">
+          ₴{{ summary ? summary.monthly_budget_uah.toLocaleString('uk-UA') : '142,850' }}
         </div>
+        <p class="text-[11px] text-[#059669] font-semibold mt-1">
+          +4.2% порівняно з вереснем (${{ summary ? summary.monthly_budget_usd : '3,440' }})
+        </p>
       </div>
 
-      <div class="upcoming-box">
-        <div class="box-head">
-          <h3>Найближчі списання</h3>
-          <span class="box-tag">Наступні 14 днів</span>
+      <div class="bg-white border border-[#E7E5E4] p-5 rounded-2xl shadow-xs text-left">
+        <div class="flex justify-between items-start">
+          <span class="text-xs font-bold text-[#78716C]">Активні ліцензії</span>
+          <span class="bg-[#FEF3C7] text-[#92400E] px-2 py-0.5 rounded text-[11px] font-bold">28</span>
         </div>
-        <div class="upcoming-list">
-          <div class="upcoming-item">
-            <div class="up-icon" style="background: #ff9900; color: #000;">AWS</div>
-            <div class="up-meta">
-              <strong>AWS Cloud Infrastructure</strong>
-              <span>Хостинг та Сервери</span>
-            </div>
-            <div class="up-cost">
-              <strong>$840.00</strong>
-              <span style="color: #c2410c;">Через 3 дні</span>
-            </div>
-          </div>
-
-          <div class="upcoming-item">
-            <div class="up-icon" style="background: #0acf83; color: #fff;">F</div>
-            <div class="up-meta">
-              <strong>Figma Organization</strong>
-              <span>UI/UX Дизайн</span>
-            </div>
-            <div class="up-cost">
-              <strong>$180.00</strong>
-              <span style="color: #c2410c;">Через 5 днів</span>
-            </div>
-          </div>
-
-          <div class="upcoming-item">
-            <div class="up-icon" style="background: #1c1917; color: #fff;">JB</div>
-            <div class="up-meta">
-              <strong>JetBrains All Products</strong>
-              <span>DevTools</span>
-            </div>
-            <div class="up-cost">
-              <strong>$249.00</strong>
-              <span style="color: #c2410c;">Через 9 днів</span>
-            </div>
-          </div>
-
-          <div class="upcoming-item">
-            <div class="up-icon" style="background: #4a154b; color: #fff;">S</div>
-            <div class="up-meta">
-              <strong>Slack Business+</strong>
-              <span>Комунікація</span>
-            </div>
-            <div class="up-cost">
-              <strong>$150.00</strong>
-              <span style="color: #78716c;">Через 12 днів</span>
-            </div>
-          </div>
+        <div class="text-2xl font-black text-[#1e293b] mt-3">
+          {{ summary ? summary.active_subscriptions : 24 }} сервісів
         </div>
+        <p class="text-[11px] text-[#059669] font-semibold mt-1">100% закріплено за командою</p>
+      </div>
+
+      <div class="bg-white border border-[#E7E5E4] p-5 rounded-2xl shadow-xs text-left">
+        <div class="flex justify-between items-start">
+          <span class="text-xs font-bold text-[#78716C]">Заявки на розгляд</span>
+          <span class="bg-[#FEE2E2] text-[#991B1B] px-2 py-0.5 rounded text-[11px] font-bold">3</span>
+        </div>
+        <div class="text-2xl font-black text-[#1e293b] mt-3">3 очікують</div>
+        <p class="text-[11px] text-[#78716C] mt-1">₴18,500 бюджет нових запитів</p>
+      </div>
+
+      <div class="bg-white border border-[#E7E5E4] p-5 rounded-2xl shadow-xs text-left">
+        <div class="flex justify-between items-start">
+          <span class="text-xs font-bold text-[#78716C]">Середній чек / спеціаліст</span>
+          <span class="text-sm">👤</span>
+        </div>
+        <div class="text-2xl font-black text-[#1e293b] mt-3">
+          ₴{{ summary ? summary.avg_cost_per_member_uah.toLocaleString('uk-UA') : '5,100' }} / міс
+        </div>
+        <p class="text-[11px] text-[#78716C] mt-1">Штат команди: {{ summary ? summary.team_members_count : 28 }} інженерів</p>
       </div>
     </div>
 
-    <div class="top-services-card">
-      <div class="box-head">
-        <h3>Реєстр ключових цифрових активів</h3>
-        <span class="box-tag">Топ-4 за обсягом бюджету</span>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="md:col-span-2 bg-white border border-[#E7E5E4] p-6 rounded-2xl shadow-xs text-left">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="font-bold text-sm text-[#1e293b]">Динаміка витрат та прогноз (Cash Flow)</h3>
+          <span class="text-[10px] bg-[#F5F5F4] px-2.5 py-1 rounded border border-[#E7E5E4] font-semibold text-[#78716C]">UAH / Останні 6 місяців</span>
+        </div>
+        <div class="h-48 flex items-end justify-between gap-4 px-4 pb-2 border-b border-[#E7E5E4]">
+          <div class="flex-1 bg-[#881337] rounded-t-sm h-[60%]"></div>
+          <div class="flex-1 bg-[#881337] rounded-t-sm h-[70%]"></div>
+          <div class="flex-1 bg-[#881337] rounded-t-sm h-[80%]"></div>
+          <div class="flex-1 bg-[#881337] rounded-t-sm h-[85%]"></div>
+          <div class="flex-1 bg-[#881337] rounded-t-sm h-[92%]"></div>
+          <div class="flex-1 bg-[#881337] rounded-t-sm h-[100%]"></div>
+          <div class="flex-1 bg-[#FDE68A] border border-[#F59E0B] border-dashed rounded-t-sm h-[85%]"></div>
+        </div>
+        <div class="flex justify-between text-[11px] text-[#78716C] pt-2 px-4">
+          <span>Травень</span><span>Червень</span><span>Липень</span><span>Серпень</span><span>Вересень</span><span class="font-bold text-[#881337]">Жовтень</span><span>Листопад *</span>
+        </div>
       </div>
-      <table class="dash-table">
-        <thead>
-          <tr>
-            <th>Назва сервісу</th>
-            <th>Категорія витрат</th>
-            <th>Відповідальний</th>
-            <th>Періодичність</th>
-            <th>Тарифна вартість</th>
-            <th>Статус ліцензії</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in store.subscriptions.slice(0, 4)" :key="item.id">
-            <td><strong>{{ item.name }}</strong></td>
-            <td><span class="badge">{{ item.category }}</span></td>
-            <td>{{ item.owner_name }}</td>
-            <td>{{ item.billing_period === 'monthly' ? 'Щомісячно' : 'Щорічно' }}</td>
-            <td><strong>${{ item.cost_usd.toFixed(2) }}</strong> (₴{{ item.cost_uah.toLocaleString() }})</td>
-            <td>
-              <span :class="['badge-status', item.status]">
-                {{ item.status === 'active' ? 'Активна' : 'На розгляді' }}
-              </span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+
+      <div class="bg-white border border-[#E7E5E4] p-6 rounded-2xl shadow-xs text-left">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="font-bold text-sm text-[#1e293b]">Найближчі списання</h3>
+          <span class="text-[10px] bg-[#F5F5F4] px-2 py-0.5 rounded border border-[#E7E5E4] text-[#78716C]">Наступні 14 днів</span>
+        </div>
+        <div class="space-y-3">
+          <div class="flex items-center justify-between p-2.5 rounded-lg bg-[#FAF8F5] border border-[#E7E5E4]">
+            <div class="flex items-center gap-2.5">
+              <span class="w-8 h-8 rounded bg-[#F59E0B] text-white flex items-center justify-center font-bold text-xs">AWS</span>
+              <div>
+                <p class="font-bold text-xs">AWS Cloud Infra</p>
+                <p class="text-[10px] text-[#DC2626]">Через 3 дні</p>
+              </div>
+            </div>
+            <span class="font-bold text-xs">$840.00</span>
+          </div>
+          <div class="flex items-center justify-between p-2.5 rounded-lg bg-[#FAF8F5] border border-[#E7E5E4]">
+            <div class="flex items-center gap-2.5">
+              <span class="w-8 h-8 rounded bg-[#10B981] text-white flex items-center justify-center font-bold text-xs">F</span>
+              <div>
+                <p class="font-bold text-xs">Figma Organization</p>
+                <p class="text-[10px] text-[#F59E0B]">Через 5 днів</p>
+              </div>
+            </div>
+            <span class="font-bold text-xs">$180.00</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { useSubscriptionStore } from '../stores/subscriptionStore'
-
-const store = useSubscriptionStore()
-</script>
-
-<style scoped>
-.dashboard-page {
-  padding: 28px 40px 48px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.dash-header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-}
-
-.dash-title h1 {
-  font-size: 22px;
-  font-weight: 700;
-  color: #1c1917;
-  margin-bottom: 4px;
-}
-
-.dash-title p {
-  font-size: 13px;
-  color: #78716c;
-}
-
-.dash-date-picker {
-  background: #ffffff;
-  border: 1px solid #e7e5e4;
-  padding: 7px 14px;
-  border-radius: 7px;
-  font-size: 12px;
-  font-weight: 600;
-  color: #44403c;
-}
-
-.kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-}
-
-.kpi-card {
-  background: #ffffff;
-  border: 1px solid #e7e5e4;
-  border-radius: 12px;
-  padding: 18px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.kpi-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.kpi-label {
-  font-size: 12.5px;
-  color: #78716c;
-  font-weight: 500;
-}
-
-.kpi-icon-pill {
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 12px;
-}
-
-.kpi-value {
-  font-size: 22px;
-  font-weight: 800;
-  color: #1c1917;
-}
-
-.kpi-sub {
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.positive {
-  color: #9f1239;
-}
-
-.charts-row {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 20px;
-}
-
-.chart-box, .upcoming-box, .top-services-card {
-  background: #ffffff;
-  border: 1px solid #e7e5e4;
-  border-radius: 12px;
-  padding: 20px;
-}
-
-.box-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-
-.box-head h3 {
-  font-size: 14.5px;
-  font-weight: 700;
-  color: #1c1917;
-}
-
-.box-tag {
-  font-size: 11px;
-  background: #faf8f5;
-  border: 1px solid #e7e5e4;
-  padding: 4px 8px;
-  border-radius: 6px;
-  color: #78716c;
-}
-
-.bars-container {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-around;
-  height: 180px;
-  padding-bottom: 8px;
-}
-
-.bar-col {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  height: 100%;
-  justify-content: flex-end;
-  width: 48px;
-}
-
-.bar-col span {
-  font-size: 11px;
-  color: #78716c;
-}
-
-.bar-fill {
-  width: 32px;
-  background: #9f1239;
-  border-radius: 4px;
-}
-
-.active-bar {
-  background: #881337;
-}
-
-.active-txt {
-  font-weight: 700;
-  color: #881337 !important;
-}
-
-.forecast-bar {
-  background: #fde68a;
-  border: 1px dashed #d97706;
-}
-
-.upcoming-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.upcoming-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 10px;
-  background: #faf8f5;
-  border-radius: 8px;
-}
-
-.up-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: 10px;
-}
-
-.up-meta {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-}
-
-.up-meta strong {
-  font-size: 12px;
-  color: #1c1917;
-}
-
-.up-meta span {
-  font-size: 10.5px;
-  color: #78716c;
-}
-
-.up-cost {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-}
-
-.up-cost strong {
-  font-size: 12.5px;
-  color: #1c1917;
-}
-
-.up-cost span {
-  font-size: 10.5px;
-  font-weight: 600;
-}
-
-.dash-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12.5px;
-}
-
-.dash-table th {
-  text-align: left;
-  padding: 10px 14px;
-  background: #faf8f5;
-  color: #78716c;
-  font-weight: 600;
-  border-bottom: 1px solid #e7e5e4;
-}
-
-.dash-table td {
-  padding: 12px 14px;
-  border-bottom: 1px solid #f5f5f4;
-}
-
-.badge {
-  background: #faf8f5;
-  border: 1px solid #e7e5e4;
-  padding: 3px 8px;
-  border-radius: 6px;
-  font-size: 11px;
-}
-
-.badge-status {
-  padding: 3px 8px;
-  border-radius: 6px;
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.badge-status.active {
-  background: #ecfdf5;
-  color: #047857;
-}
-
-.badge-status.review {
-  background: #fef3c7;
-  color: #b45309;
-}
-</style>
