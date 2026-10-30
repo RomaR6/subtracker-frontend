@@ -1,30 +1,94 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRouter } from "vue-router";
+import api from "../api/axios";
 import { useAuthStore } from "../stores/auth";
+import { verifyTotpToken } from "../utils/totp";
 
 const router = useRouter();
 const authStore = useAuthStore();
 
 const email = ref("roman@novatech.com");
 const password = ref("admin");
+const showPassword = ref(false);
+
 const show2FaModal = ref(false);
 const totpCode = ref("");
 const totpError = ref("");
+const isVerifying = ref(false);
+
+const showForgotModal = ref(false);
+const forgotEmail = ref("");
+const forgotSent = ref(false);
+const isSendingReset = ref(false);
+const forgotError = ref("");
 
 const handleLogin = async () => {
+  authStore.errorMessage = "";
+  const is2FaEnabled = localStorage.getItem(`subtracker_2fa_${email.value.trim()}_enabled`) === "true";
+
+  if (is2FaEnabled) {
+    authStore.isLoading = true;
+    const ok = await authStore.login(email.value, password.value);
+    authStore.isLoading = false;
+    if (ok) {
+      show2FaModal.value = true;
+      totpCode.value = "";
+      totpError.value = "";
+    }
+    return;
+  }
+
   const success = await authStore.login(email.value, password.value);
   if (success) {
-    router.push("/dashboard");
+    router.push("/app/dashboard");
   }
 };
 
-const handle2FaVerify = () => {
-  if (totpCode.value.length === 6 && /^\d+$/.test(totpCode.value)) {
+const handle2FaVerify = async () => {
+  totpError.value = "";
+  if (!/^\d{6}$/.test(totpCode.value.trim())) {
+    totpError.value = "Введіть 6-значний числовий код із додатка";
+    return;
+  }
+
+  isVerifying.value = true;
+  try {
+    const secret = localStorage.getItem(`subtracker_2fa_${email.value.trim()}_secret`) || "JBSWY3DPEHPK3PXP";
+    const isValid = await verifyTotpToken(secret, totpCode.value);
+
+    if (!isValid) {
+      totpError.value = "Невірний або прострочений код TOTP. Спробуйте ще раз.";
+      return;
+    }
+
     show2FaModal.value = false;
-    router.push("/dashboard");
-  } else {
-    totpError.value = "Введіть коректний 6-значний числовий код";
+    router.push("/app/dashboard");
+  } finally {
+    isVerifying.value = false;
+  }
+};
+
+const openForgotModal = () => {
+  forgotEmail.value = email.value;
+  forgotSent.value = false;
+  forgotError.value = "";
+  showForgotModal.value = true;
+};
+
+const handlePasswordReset = async () => {
+  if (!forgotEmail.value.trim()) return;
+  isSendingReset.value = true;
+  forgotError.value = "";
+  try {
+    await api.post("/auth/forgot-password", {
+      email: forgotEmail.value.trim()
+    });
+    forgotSent.value = true;
+  } catch (err: any) {
+    forgotError.value = err.response?.data?.detail || "Помилка при запиті відновлення.";
+  } finally {
+    isSendingReset.value = false;
   }
 };
 
@@ -64,15 +128,37 @@ const quickFill = (userEmail: string) => {
         <div>
           <div class="flex justify-between items-center mb-1">
             <label class="text-xs font-bold text-[#44403C]">Пароль</label>
-            <span class="text-[11px] text-[#881337] hover:underline cursor-pointer">Забули пароль?</span>
+            <button
+              type="button"
+              @click="openForgotModal"
+              class="text-[11px] text-[#881337] hover:underline cursor-pointer font-semibold"
+            >
+              Забули пароль?
+            </button>
           </div>
-          <input
-            v-model="password"
-            type="password"
-            required
-            placeholder="••••••••"
-            class="w-full px-3.5 py-2.5 bg-[#FAF8F5] border border-[#E7E5E4] rounded-lg text-sm text-[#1e293b] focus:outline-none focus:border-[#881337] transition"
-          />
+          <div class="relative">
+            <input
+              v-model="password"
+              :type="showPassword ? 'text' : 'password'"
+              required
+              placeholder="••••••••"
+              class="w-full pl-3.5 pr-10 py-2.5 bg-[#FAF8F5] border border-[#E7E5E4] rounded-lg text-sm text-[#1e293b] focus:outline-none focus:border-[#881337] transition"
+            />
+            <button
+              type="button"
+              @click="showPassword = !showPassword"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-[#78716C] hover:text-[#1e293b] p-1 cursor-pointer transition select-none"
+              :title="showPassword ? 'Приховати пароль' : 'Показати пароль'"
+            >
+              <svg v-if="!showPassword" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <button
@@ -81,29 +167,21 @@ const quickFill = (userEmail: string) => {
           class="w-full bg-[#881337] hover:bg-[#9F1239] text-white py-2.5 rounded-lg text-sm font-bold transition shadow-sm cursor-pointer disabled:opacity-50"
         >
           <span v-if="!authStore.isLoading">Увійти в робочий простір</span>
-          <span v-else>Перевірка сесії...</span>
-        </button>
-
-        <button
-          type="button"
-          @click="show2FaModal = true"
-          class="w-full bg-white hover:bg-[#F5F5F4] text-[#44403C] border border-[#E7E5E4] py-2 rounded-lg text-xs font-semibold transition"
-        >
-          🔐 Вхід із двоетапною перевіркою 2FA
+          <span v-else>Перевірка даних...</span>
         </button>
       </form>
 
       <div class="mt-6 pt-6 border-t border-[#E7E5E4] text-left">
         <p class="text-[10px] font-bold text-[#78716C] uppercase tracking-wider mb-2">Швидкий демо-вхід:</p>
         <div class="flex flex-wrap gap-2 text-[11px]">
-          <button @click="quickFill('roman@novatech.com')" class="px-2 py-1 bg-[#F5F5F4] hover:bg-[#E7E5E4] rounded font-medium text-[#44403C]">
-            👑 Суперадмін (Роман)
+          <button @click="quickFill('roman@novatech.com')" class="px-2 py-1 bg-[#F5F5F4] hover:bg-[#E7E5E4] rounded font-medium text-[#44403C] cursor-pointer">
+            Суперадмін (Роман)
           </button>
-          <button @click="quickFill('kravchenko@novatech.com')" class="px-2 py-1 bg-[#F5F5F4] hover:bg-[#E7E5E4] rounded font-medium text-[#44403C]">
-            🛠 Менеджер (Кравченко)
+          <button @click="quickFill('kravchenko@novatech.com')" class="px-2 py-1 bg-[#F5F5F4] hover:bg-[#E7E5E4] rounded font-medium text-[#44403C] cursor-pointer">
+            Менеджер (Кравченко)
           </button>
-          <button @click="quickFill('kovalchuk@novatech.com')" class="px-2 py-1 bg-[#F5F5F4] hover:bg-[#E7E5E4] rounded font-medium text-[#44403C]">
-            🎨 Дизайнер (Ковальчук)
+          <button @click="quickFill('kovalchuk@novatech.com')" class="px-2 py-1 bg-[#F5F5F4] hover:bg-[#E7E5E4] rounded font-medium text-[#44403C] cursor-pointer">
+            Дизайнер (Ковальчук)
           </button>
         </div>
       </div>
@@ -116,26 +194,97 @@ const quickFill = (userEmail: string) => {
       </p>
     </div>
 
+    <!-- Модалка Забули пароль з реальним бекенд-запитом -->
+    <div v-if="showForgotModal" class="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+      <div class="bg-white border border-[#E7E5E4] rounded-2xl p-6 max-w-sm w-full shadow-xl text-left">
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="font-bold text-base text-[#1e293b]">Відновлення пароля</h3>
+          <button @click="showForgotModal = false" class="text-[#78716C] hover:text-[#1e293b] text-sm p-1 cursor-pointer">✕</button>
+        </div>
+
+        <div v-if="!forgotSent" class="space-y-3.5 text-xs">
+          <p class="text-[#78716C]">
+            Вкажіть пошту облікового запису. Сервіс згенерує посилання для встановлення нового пароля.
+          </p>
+
+          <div v-if="forgotError" class="p-2.5 bg-[#FEF2F2] border border-[#FECDD3] text-[#DC2626] rounded-lg">
+            {{ forgotError }}
+          </div>
+
+          <div>
+            <label class="block font-bold text-[#44403C] mb-1">Email облікового запису</label>
+            <input
+              v-model="forgotEmail"
+              type="email"
+              required
+              placeholder="name@company.com"
+              class="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E7E5E4] rounded-lg text-xs"
+            />
+          </div>
+
+          <div class="flex gap-2 pt-2">
+            <button
+              type="button"
+              @click="showForgotModal = false"
+              class="flex-1 py-2 bg-[#F5F5F4] text-[#44403C] font-bold rounded-lg cursor-pointer hover:bg-[#E7E5E4]"
+            >
+              Скасувати
+            </button>
+            <button
+              type="button"
+              @click="handlePasswordReset"
+              :disabled="isSendingReset || !forgotEmail"
+              class="flex-1 py-2 bg-[#881337] text-white font-bold rounded-lg cursor-pointer hover:bg-[#9F1239] disabled:opacity-50"
+            >
+              {{ isSendingReset ? "Надсилання..." : "Надіслати лінк" }}
+            </button>
+          </div>
+        </div>
+
+        <div v-else class="space-y-3.5 text-xs text-center py-2">
+          <div class="w-10 h-10 bg-[#ECFDF5] text-[#059669] rounded-full flex items-center justify-center mx-auto text-lg font-black border border-[#A7F3D0]">
+            ✓
+          </div>
+          <p class="font-bold text-sm text-[#1e293b]">Запит успішно оброблено!</p>
+          <p class="text-[#78716C]">
+            Якщо акаунт із поштою <strong>{{ forgotEmail }}</strong> зареєстровано в системі, лінк для відновлення згенеровано.
+          </p>
+          <button
+            type="button"
+            @click="showForgotModal = false"
+            class="w-full py-2 bg-[#1e293b] text-white font-bold rounded-lg cursor-pointer hover:bg-[#334155]"
+          >
+            Зрозуміло
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Модалка 2FA -->
     <div v-if="show2FaModal" class="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
       <div class="bg-white border border-[#E7E5E4] rounded-2xl p-6 max-w-sm w-full shadow-xl text-center">
         <h3 class="font-bold text-lg text-[#1e293b]">Двоетапна авторизація 2FA</h3>
-        <p class="text-xs text-[#78716C] mt-1 mb-4">Введіть 6-значний код з вашого додатку Google Authenticator</p>
+        <p class="text-xs text-[#78716C] mt-1 mb-4">Введіть 6-значний код із вашого додатка Google Authenticator</p>
         
         <input
           v-model="totpCode"
           maxlength="6"
           type="text"
-          placeholder="482910"
-          class="w-full text-center tracking-[0.5em] font-mono font-black text-xl py-2 bg-[#FAF8F5] border border-[#E7E5E4] rounded-lg mb-2"
+          placeholder="123456"
+          class="w-full text-center tracking-[0.4em] font-mono font-black text-xl py-2 bg-[#FAF8F5] border border-[#E7E5E4] rounded-lg mb-2"
         />
-        <p v-if="totpError" class="text-xs text-[#DC2626] mb-3">{{ totpError }}</p>
+        <p v-if="totpError" class="text-xs text-[#DC2626] font-bold mb-3">{{ totpError }}</p>
 
         <div class="flex gap-2 mt-4">
-          <button @click="show2FaModal = false" class="flex-1 py-2 bg-[#F5F5F4] text-xs font-bold rounded-lg hover:bg-[#E7E5E4]">
+          <button @click="show2FaModal = false" class="flex-1 py-2 bg-[#F5F5F4] text-xs font-bold rounded-lg hover:bg-[#E7E5E4] cursor-pointer">
             Скасувати
           </button>
-          <button @click="handle2FaVerify" class="flex-1 py-2 bg-[#881337] text-white text-xs font-bold rounded-lg hover:bg-[#9F1239]">
-            Підтвердити
+          <button
+            @click="handle2FaVerify"
+            :disabled="isVerifying || totpCode.length !== 6"
+            class="flex-1 py-2 bg-[#881337] text-white text-xs font-bold rounded-lg hover:bg-[#9F1239] cursor-pointer disabled:opacity-50"
+          >
+            {{ isVerifying ? "Перевірка..." : "Підтвердити" }}
           </button>
         </div>
       </div>

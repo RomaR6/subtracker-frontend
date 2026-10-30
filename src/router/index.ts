@@ -23,6 +23,11 @@ const router = createRouter({
       meta: { guestOnly: true }
     },
     {
+      path: "/reset-password",
+      name: "reset-password",
+      component: () => import("../views/ResetPasswordView.vue")
+    },
+    {
       path: "/accept-invite",
       name: "accept-invite",
       component: () => import("../views/AcceptInviteView.vue")
@@ -67,6 +72,11 @@ const router = createRouter({
           component: () => import("../views/SettingsView.vue")
         },
         {
+          path: "profile",
+          name: "profile",
+          component: () => import("../views/ProfileView.vue")
+        },
+        {
           path: "admin/workspaces",
           name: "admin-workspaces",
           component: () => import("../views/AdminWorkspacesView.vue"),
@@ -105,13 +115,17 @@ const router = createRouter({
       redirect: "/app/settings"
     },
     {
+      path: "/profile",
+      redirect: "/app/profile"
+    },
+    {
       path: "/:pathMatch(.*)*",
       redirect: "/"
     }
   ]
 });
 
-router.beforeEach(async (to, _, next) => {
+router.beforeEach(async (to) => {
   const authStore = useAuthStore();
 
   if (authStore.token && !authStore.user) {
@@ -120,24 +134,23 @@ router.beforeEach(async (to, _, next) => {
 
   const isAuth = authStore.isAuthenticated;
 
-  // Якщо авторизований користувач переходить на головну сторінку лендингу, перенаправляємо його на дашборд
   if (to.path === "/" && isAuth) {
-    return next({ name: "dashboard" });
+    return { name: "dashboard" };
   }
 
   if (to.meta.requiresAuth && !isAuth) {
-    return next({ name: "login" });
+    return { name: "login" };
   }
 
   if (to.meta.guestOnly && isAuth) {
-    return next({ name: "dashboard" });
+    return { name: "dashboard" };
   }
 
   if (to.meta.superadminOnly && !authStore.isSuperadmin) {
-    return next({ name: "dashboard" });
+    return { name: "dashboard" };
   }
 
-  next();
+  return true;
 });
 
 export default router;

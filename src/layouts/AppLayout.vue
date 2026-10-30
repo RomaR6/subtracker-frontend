@@ -4,14 +4,12 @@ import { useRoute, useRouter } from "vue-router";
 import api from "../api/axios";
 import { useAuthStore } from "../stores/auth";
 import { useWorkspaceStore } from "../stores/workspace";
-import ProfileModal from "../components/profile/ProfileModal.vue";
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 const wsStore = useWorkspaceStore();
 
-const showProfileModal = ref(false);
 const showWsDropdown = ref(false);
 const showNewWsModal = ref(false);
 const newWsName = ref("");
@@ -52,7 +50,7 @@ const createWorkspace = async () => {
     showNewWsModal.value = false;
     await wsStore.fetchWorkspaces();
     if (res.data?.id) {
-      wsStore.selectWorkspace(res.data);
+      await wsStore.selectWorkspace(res.data);
     }
   } catch (err: any) {
     wsCreateError.value = err.response?.data?.detail 
@@ -64,12 +62,13 @@ const createWorkspace = async () => {
 };
 
 const navLinks = [
-  { name: "Дашборд витрат", route: "/app/dashboard", badge: null },
-  { name: "Каталог підписок", route: "/app/subscriptions", badge: null },
-  { name: "Центр погоджень", route: "/app/requests", badge: null },
-  { name: "Фінансова аналітика", route: "/app/analytics", badge: null },
-  { name: "Команда та ролі", route: "/app/team", badge: null },
-  { name: "Налаштування", route: "/app/settings", badge: null }
+  { name: "Дашборд витрат", route: "/app/dashboard" },
+  { name: "Каталог підписок", route: "/app/subscriptions" },
+  { name: "Центр погоджень", route: "/app/requests" },
+  { name: "Фінансова аналітика", route: "/app/analytics" },
+  { name: "Команда та ролі", route: "/app/team" },
+  { name: "Налаштування", route: "/app/settings" },
+  { name: "Особистий кабінет", route: "/app/profile" }
 ];
 </script>
 
@@ -134,24 +133,26 @@ const navLinks = [
         <span v-if="syncFeedback" class="text-[11px] font-bold text-[#059669]">{{ syncFeedback }}</span>
 
         <button
+          v-if="authStore.isAdminOrManager"
           @click="router.push('/app/subscriptions')"
           class="bg-[#881337] hover:bg-[#9F1239] text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
         >
           <span>+ Додати підписку</span>
         </button>
 
-        <div
-          @click="showProfileModal = true"
+        <router-link
+          to="/app/profile"
           class="flex items-center gap-2.5 pl-2 border-l border-[#E7E5E4] cursor-pointer hover:opacity-80 transition"
+          title="Перейти до особистого кабінету"
         >
           <div class="w-8 h-8 rounded-full bg-[#E7E5E4] text-[#881337] font-bold text-xs flex items-center justify-center border border-[#D6D3D1]">
-            {{ authStore.user?.first_name ? authStore.user.first_name[0] : "R" }}
+            {{ authStore.user?.first_name ? authStore.user.first_name[0] : "U" }}
           </div>
           <div class="text-left text-xs leading-tight hidden sm:block">
             <p class="font-bold text-[#1e293b]">{{ authStore.userFullName }}</p>
-            <p class="text-[10px] text-[#78716C] capitalize">{{ authStore.role }}</p>
+            <p class="text-[10px] text-[#78716C]">{{ authStore.role }}</p>
           </div>
-        </div>
+        </router-link>
       </div>
     </header>
 
@@ -178,8 +179,6 @@ const navLinks = [
     <main class="p-6 max-w-[1400px] mx-auto">
       <router-view />
     </main>
-
-    <ProfileModal :show="showProfileModal" @close="showProfileModal = false" />
 
     <div v-if="showNewWsModal" class="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
       <div class="bg-white border border-[#E7E5E4] rounded-2xl max-w-sm w-full p-6 shadow-xl text-left">
