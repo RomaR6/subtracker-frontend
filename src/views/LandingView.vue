@@ -1,177 +1,303 @@
 <script setup lang="ts">
-import { onMounted } from "vue";
-import { useRouter } from "vue-router";
-import { useWorkspaceStore } from "../stores/workspace";
-import ServicesShowcase from "../components/landing/ServicesShowcase.vue";
-import RoiCalculator from "../components/landing/RoiCalculator.vue";
-import PricingSection from "../components/landing/PricingSection.vue";
+import { ref, computed } from "vue";
+import subtrackLogo from "../assets/subtrack_logo.jpg";
 
-const router = useRouter();
-const wsStore = useWorkspaceStore();
+import awsIcon from "../assets/integrations/aws.svg";
+import figmaIcon from "../assets/integrations/figma.svg";
+import jetbrainsIcon from "../assets/integrations/jetbrains.svg";
+import slackIcon from "../assets/integrations/slack.svg";
+import githubIcon from "../assets/integrations/github.svg";
+import notionIcon from "../assets/integrations/notion.svg";
+import zoomIcon from "../assets/integrations/zoom.svg";
+import dockerIcon from "../assets/integrations/docker.svg";
 
-onMounted(async () => {
-  await wsStore.fetchRates();
+const teamSize = ref(25);
+const avgSeatCost = ref(35);
+const duplicateRate = ref(15);
+const uahRate = ref(45.35);
+
+const annualSaaSExpense = computed(() => {
+  return teamSize.value * avgSeatCost.value * 12;
 });
+
+const estimatedSavingsUsd = computed(() => {
+  return Math.round(annualSaaSExpense.value * (duplicateRate.value / 100));
+});
+
+const estimatedSavingsUah = computed(() => {
+  return Math.round(estimatedSavingsUsd.value * uahRate.value);
+});
+
+const integrations = [
+  {
+    name: "AWS Cloud Infrastructure",
+    category: "Хмарна інфраструктура",
+    cost: "840",
+    uah: "38 096",
+    iconSrc: awsIcon
+  },
+  {
+    name: "Figma Organization",
+    category: "Дизайн та прототипування",
+    cost: "180",
+    uah: "8 163",
+    iconSrc: figmaIcon
+  },
+  {
+    name: "JetBrains All Products",
+    category: "IDE та засоби розробки",
+    cost: "249",
+    uah: "11 293",
+    iconSrc: jetbrainsIcon
+  },
+  {
+    name: "Slack Business+",
+    category: "Корпоративні комунікації",
+    cost: "150",
+    uah: "6 803",
+    iconSrc: slackIcon
+  },
+  {
+    name: "GitHub Enterprise",
+    category: "Контроль версій та CI/CD",
+    cost: "420",
+    uah: "19 048",
+    iconSrc: githubIcon
+  },
+  {
+    name: "Notion Enterprise",
+    category: "База знань і документація",
+    cost: "160",
+    uah: "7 256",
+    iconSrc: notionIcon
+  },
+  {
+    name: "Zoom One Business",
+    category: "Відеоконференції",
+    cost: "250",
+    uah: "11 338",
+    iconSrc: zoomIcon
+  },
+  {
+    name: "Docker Team Pro",
+    category: "Контейнеризація",
+    cost: "135",
+    uah: "6 123",
+    iconSrc: dockerIcon
+  }
+];
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#FAF8F5] text-[#1e293b] font-sans antialiased selection:bg-[#881337] selection:text-white">
-    <!-- Public Header -->
-    <header class="bg-white border-b border-[#E7E5E4] px-6 py-4 sticky top-0 z-40 shadow-xs">
-      <div class="max-w-[1240px] mx-auto flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-xl bg-[#881337] text-white flex items-center justify-center font-black text-xl shadow-sm">
-            S
+  <div class="min-h-screen bg-[#FAF8F5] text-[#1e293b]">
+    <!-- Головний екран -->
+    <section class="max-w-7xl mx-auto px-6 pt-12 pb-16 text-center md:text-left grid grid-cols-1 md:grid-cols-12 gap-10 items-center">
+      <div class="md:col-span-7 space-y-6">
+        <div class="flex items-center gap-3 justify-center md:justify-start">
+          <div class="h-12 w-12 rounded-xl border border-[#E7E5E4] bg-white overflow-hidden shadow-xs flex items-center justify-center p-1 shrink-0">
+            <img :src="subtrackLogo" alt="SubTracker" class="w-full h-full object-contain scale-110 -translate-x-0.5 translate-y-0.5" />
           </div>
           <div>
-            <span class="font-black text-lg tracking-tight text-[#1e293b]">SubTracker B2B</span>
-            <span class="text-[10px] text-[#78716C] block leading-none">Enterprise Asset Management</span>
+            <span class="text-2xl font-black tracking-tight text-[#881337] block leading-none">
+              Sub<span class="text-[#1e293b]">Tracker</span>
+            </span>
+            <span class="text-[10px] font-bold text-[#78716C] tracking-widest uppercase block mt-1">
+              Enterprise Asset Management
+            </span>
           </div>
         </div>
 
-        <nav class="hidden md:flex items-center gap-8 text-xs font-bold text-[#78716C]">
-          <a href="#features" class="hover:text-[#881337] transition">Можливості</a>
-          <a href="#services" class="hover:text-[#881337] transition">Каталог сервісів</a>
-          <a href="#roi-calculator" class="hover:text-[#881337] transition">Калькулятор економії</a>
-          <a href="#pricing" class="hover:text-[#881337] transition">Тарифи</a>
-        </nav>
+        <span class="inline-block bg-[#FEF2F2] border border-[#FECDD3] text-[#881337] px-3.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider">
+          🚀 Вільний інструмент оптимізації IT-бюджету
+        </span>
 
-        <div class="flex items-center gap-3">
-          <!-- NBU USD Pill -->
-          <div class="hidden sm:flex bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A] px-3 py-1 rounded-full text-xs font-bold items-center gap-1">
-            <span>НБУ: $1 = {{ wsStore.usdRate.toFixed(2) }} ₴</span>
-          </div>
-
-          <router-link
-            to="/login"
-            class="px-4 py-2 text-xs font-bold text-[#44403C] hover:text-[#881337] transition"
-          >
-            Увійти
-          </router-link>
-
-          <router-link
-            to="/register"
-            class="px-4 py-2 bg-[#881337] hover:bg-[#9F1239] text-white rounded-lg text-xs font-bold transition shadow-sm active:scale-95"
-          >
-            Створити простір
-          </router-link>
-        </div>
-      </div>
-    </header>
-
-    <!-- Hero Section -->
-    <section class="py-20 lg:py-28 overflow-hidden relative">
-      <div class="max-w-[1240px] mx-auto px-6 text-center">
-        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#FEF2F2] border border-[#FECDD3] rounded-full text-xs font-bold text-[#881337] mb-6 shadow-xs">
-          <span>🚀 B2B SaaS платформа обліку підписок для IT-підприємств</span>
-        </div>
-
-        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black text-[#1e293b] tracking-tight max-w-4xl mx-auto leading-tight">
-          Повний контроль корпоративного софту, ліцензій та бюджету в <span class="text-[#881337]">UAH</span>
+        <h1 class="text-3xl md:text-5xl font-black text-[#1e293b] leading-tight">
+          Повний контроль IT-ліцензій та підписок компанії
         </h1>
 
-        <p class="text-sm sm:text-base text-[#78716C] max-w-2xl mx-auto mt-6 leading-relaxed">
-          Централізований облік підписок, калькулятор собівартості фахівців за моделлю ФОП 3-ї групи (5% + ЄСВ), попередження про списання в Telegram та узгодження нових витрат команди.
+        <p class="text-sm md:text-base text-[#78716C] leading-relaxed max-w-2xl">
+          Автоматизуйте облік ліцензій, проводьте аудит зайвих робочих місць, контролюйте Cash Flow та нормалізуйте витрати в UAH за курсом НБУ ($1 = {{ uahRate }} ₴).
         </p>
 
-        <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5">
+        <div class="flex flex-wrap gap-4 justify-center md:justify-start pt-2">
           <router-link
             to="/register"
-            class="w-full sm:w-auto px-6 py-3 bg-[#881337] hover:bg-[#9F1239] text-white rounded-xl text-sm font-black shadow-lg transition active:scale-95"
+            class="bg-[#881337] hover:bg-[#9F1239] text-white px-7 py-3 rounded-xl font-bold text-sm transition shadow-sm cursor-pointer"
           >
-            Розпочати безкоштовно
+            Створити робочий простір
           </router-link>
-          <a
-            href="#roi-calculator"
-            class="w-full sm:w-auto px-6 py-3 bg-white border border-[#E7E5E4] hover:bg-[#FAF8F5] text-[#1e293b] rounded-xl text-sm font-bold shadow-xs transition"
+          <router-link
+            to="/login"
+            class="bg-white border border-[#E7E5E4] hover:bg-[#FAF8F5] text-[#44403C] px-7 py-3 rounded-xl font-bold text-sm transition shadow-xs cursor-pointer"
           >
-            📊 Розрахувати ROI економії
-          </a>
+            Увійти в акаунт
+          </router-link>
         </div>
+      </div>
 
-        <!-- Metric Proof Pills -->
-        <div class="mt-14 pt-8 border-t border-[#E7E5E4] grid grid-cols-2 sm:grid-cols-4 gap-6 max-w-3xl mx-auto text-left">
-          <div>
-            <span class="text-2xl font-black text-[#1e293b]">до 30%</span>
-            <p class="text-[11px] text-[#78716C] mt-0.5">Зниження щомісячних витрат</p>
-          </div>
-          <div>
-            <span class="text-2xl font-black text-[#1e293b]">100%</span>
-            <p class="text-[11px] text-[#78716C] mt-0.5">Відповідність податкам ФОП</p>
-          </div>
-          <div>
-            <span class="text-2xl font-black text-[#1e293b]">14 днів</span>
-            <p class="text-[11px] text-[#78716C] mt-0.5">Попередження про списання</p>
-          </div>
-          <div>
-            <span class="text-2xl font-black text-[#1e293b]">PDF / CSV</span>
-            <p class="text-[11px] text-[#78716C] mt-0.5">Звітність для бухгалтерії</p>
-          </div>
+      <div class="md:col-span-5 bg-white border border-[#E7E5E4] rounded-2xl p-7 shadow-xs border-b-4 border-b-[#881337] text-left space-y-4">
+        <h3 class="font-black text-lg text-[#1e293b]">Що отримує ваша команда:</h3>
+        
+        <ul class="space-y-3 text-xs text-[#44403C]">
+          <li class="flex items-start gap-2.5">
+            <span class="text-[#059669] font-black">✓</span>
+            <span><strong>Єдиний реєстр підписок:</strong> облік тарифів, дат списань та відповідальних менеджерів.</span>
+          </li>
+          <li class="flex items-start gap-2.5">
+            <span class="text-[#059669] font-black">✓</span>
+            <span><strong>Календар автопролонгацій:</strong> завчасні нагадування перед плановими платежами.</span>
+          </li>
+          <li class="flex items-start gap-2.5">
+            <span class="text-[#059669] font-black">✓</span>
+            <span><strong>Конвертер валют:</strong> пряма синхронізація з щоденним курсом НБУ.</span>
+          </li>
+          <li class="flex items-start gap-2.5">
+            <span class="text-[#059669] font-black">✓</span>
+            <span><strong>Центр погоджень:</strong> заявки співробітників на закупівлю ПЗ із контролем статусів.</span>
+          </li>
+        </ul>
+
+        <div class="pt-3 border-t border-[#E7E5E4]">
+          <router-link to="/register" class="text-xs font-bold text-[#881337] hover:underline block text-center">
+            Розпочати роботу з компанією →
+          </router-link>
         </div>
       </div>
     </section>
 
-    <!-- Services Catalog Preview -->
-    <ServicesShowcase />
-
-    <!-- Features Section -->
-    <section id="features" class="py-20 bg-[#FAF8F5]">
-      <div class="max-w-[1240px] mx-auto px-6 text-left">
-        <div class="max-w-xl mb-12">
-          <span class="text-xs font-bold uppercase tracking-wider text-[#881337]">Архітектура системи</span>
-          <h2 class="text-3xl font-black text-[#1e293b] mt-1 tracking-tight">
-            Чому фінансові директори та лідери команд обирають SubTracker
+    <!-- Каталог інтеграцій -->
+    <section class="bg-white border-y border-[#E7E5E4] py-14">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="text-center max-w-2xl mx-auto mb-10">
+          <span class="bg-[#FEF2F2] border border-[#FECDD3] text-[#881337] px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+            Каталог інтеграцій
+          </span>
+          <h2 class="text-2xl md:text-3xl font-black text-[#1e293b] mt-2">
+            Контролюйте ліцензії будь-яких IT-сервісів команди
           </h2>
+          <p class="text-xs text-[#78716C] mt-2">
+            SubTracker нормалізує всі тарифи в гривню за курсом НБУ та систематизує витрати за категоріями.
+          </p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div class="bg-white p-6 rounded-2xl border border-[#E7E5E4] shadow-xs">
-            <div class="w-10 h-10 rounded-xl bg-[#FEF2F2] text-[#881337] flex items-center justify-center font-bold text-lg mb-4">
-              🧮
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div
+            v-for="item in integrations"
+            :key="item.name"
+            class="border border-[#E7E5E4] bg-[#FAF8F5] p-5 rounded-2xl space-y-4 hover:border-[#881337] transition text-left"
+          >
+            <div class="flex justify-between items-start">
+              <div class="w-12 h-12 rounded-xl flex items-center justify-center p-2.5 bg-white border border-[#E7E5E4] shadow-xs shrink-0">
+                <img :src="item.iconSrc" :alt="item.name" class="w-full h-full object-contain" />
+              </div>
+              <span class="bg-white border border-[#E7E5E4] text-[10px] text-[#059669] font-bold px-2.5 py-0.5 rounded-full">
+                Підключено
+              </span>
             </div>
-            <h3 class="font-bold text-base text-[#1e293b]">Калькулятор ФОП 5% + ЄСВ</h3>
-            <p class="text-xs text-[#78716C] mt-2 leading-relaxed">
-              Розрахунок повної собівартості спеціаліста за формулою (1.2): чиста винагорода Net, єдиний податок 5%, ЄСВ 1 760 грн та сумарна вартість закріпленого софту.
-            </p>
-          </div>
-
-          <div class="bg-white p-6 rounded-2xl border border-[#E7E5E4] shadow-xs">
-            <div class="w-10 h-10 rounded-xl bg-[#FEF3C7] text-[#92400E] flex items-center justify-center font-bold text-lg mb-4">
-              📑
+            <div>
+              <h4 class="font-bold text-xs text-[#1e293b] truncate">{{ item.name }}</h4>
+              <p class="text-[10px] text-[#78716C] mt-0.5">{{ item.category }}</p>
             </div>
-            <h3 class="font-bold text-base text-[#1e293b]">Парсер PDF-рахунків</h3>
-            <p class="text-xs text-[#78716C] mt-2 leading-relaxed">
-              Автоматичне вилучення сум, номерів замовлень та дат оплати з інвойсів сервісів за допомогою бібліотеки PyPDF для швидкої звітності без ручного введення.
-            </p>
-          </div>
-
-          <div class="bg-white p-6 rounded-2xl border border-[#E7E5E4] shadow-xs">
-            <div class="w-10 h-10 rounded-xl bg-[#ECFDF5] text-[#059669] flex items-center justify-center font-bold text-lg mb-4">
-              🔔
+            <div class="pt-2 border-t border-[#E7E5E4] flex justify-between items-baseline">
+              <span class="text-[10px] text-[#78716C]">Орієнтовний тариф:</span>
+              <span class="font-black text-xs text-[#1e293b]">${{ item.cost }} <span class="font-normal text-[9px] text-[#78716C]">({{ item.uah }} ₴)</span></span>
             </div>
-            <h3 class="font-bold text-base text-[#1e293b]">Telegram-сповіщення</h3>
-            <p class="text-xs text-[#78716C] mt-2 leading-relaxed">
-              Календарні нагадування про платіжні зобов'язання за 14 днів із можливістю підтвердження оплати або скасування ліцензії через інтерактивні Inline-кнопки.
-            </p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Interactive ROI Calculator -->
-    <RoiCalculator />
+    <!-- Інтерактивний ROI Калькулятор -->
+    <section class="max-w-7xl mx-auto px-6 py-16">
+      <div class="bg-white border border-[#E7E5E4] rounded-2xl p-6 md:p-12 shadow-xs grid grid-cols-1 md:grid-cols-12 gap-8 text-left">
+        <div class="md:col-span-6 space-y-5">
+          <div>
+            <span class="bg-[#FEF2F2] border border-[#FECDD3] text-[#881337] px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+              Інтерактивний розрахунок
+            </span>
+            <h3 class="text-xl md:text-2xl font-black text-[#1e293b] mt-2">
+              Калькулятор потенційної економії (ROI)
+            </h3>
+            <p class="text-xs text-[#78716C] mt-1 leading-relaxed">
+              Вкажіть параметри вашої команди, щоб оцінити суму збережених коштів завдяки аудиту та вчасному скасуванню невикористовуваних підписок.
+            </p>
+          </div>
 
-    <!-- Pricing Section -->
-    <PricingSection />
+          <div class="space-y-4 text-xs font-bold text-[#44403C]">
+            <div>
+              <div class="flex justify-between mb-1.5">
+                <span>Кількість співробітників у команді:</span>
+                <span class="text-[#881337] font-black">{{ teamSize }} осіб</span>
+              </div>
+              <input v-model.number="teamSize" type="range" min="3" max="250" class="w-full accent-[#881337]" />
+            </div>
 
-    <!-- Footer -->
+            <div>
+              <div class="flex justify-between mb-1.5">
+                <span>Середні витрати на SaaS / співробітника на місяць:</span>
+                <span class="text-[#881337] font-black">${{ avgSeatCost }} / міс</span>
+              </div>
+              <input v-model.number="avgSeatCost" type="range" min="10" max="150" class="w-full accent-[#881337]" />
+            </div>
+
+            <div>
+              <div class="flex justify-between mb-1.5">
+                <span>Очікуваний відсоток оптимізації (зайві місця, дублікати):</span>
+                <span class="text-[#881337] font-black">{{ duplicateRate }}%</span>
+              </div>
+              <input v-model.number="duplicateRate" type="range" min="5" max="40" class="w-full accent-[#881337]" />
+            </div>
+          </div>
+        </div>
+
+        <div class="md:col-span-6 bg-[#FAF8F5] border border-[#E7E5E4] rounded-2xl p-6 flex flex-col justify-between">
+          <div class="space-y-4">
+            <div class="border-b border-[#E7E5E4] pb-4">
+              <span class="text-xs text-[#78716C] block">Загальний бюджет на ПЗ / рік:</span>
+              <span class="text-xl font-black text-[#1e293b]">${{ annualSaaSExpense.toLocaleString() }}</span>
+            </div>
+
+            <div class="border-b border-[#E7E5E4] pb-4">
+              <span class="text-xs text-[#78716C] block">Очікувана річна економія:</span>
+              <div class="flex items-baseline gap-2 mt-1">
+                <span class="text-3xl font-black text-[#881337]">${{ estimatedSavingsUsd.toLocaleString() }}</span>
+                <span class="text-sm font-bold text-[#059669]">≈ {{ estimatedSavingsUah.toLocaleString() }} ₴</span>
+              </div>
+              <span class="text-[11px] text-[#78716C]">Розраховано за курсом НБУ: 1 USD = {{ uahRate }} UAH</span>
+            </div>
+
+            <div class="text-[11px] text-[#44403C] space-y-1.5">
+              <p class="font-bold">Шляхи досягнення результату:</p>
+              <p class="text-[#78716C]">• Виявлення та блокування ліцензій звільнених співробітників</p>
+              <p class="text-[#78716C]">• Відмова від паралельних інструментів з однаковим функціоналом</p>
+              <p class="text-[#78716C]">• Перехід на річні тарифи з корпоративним дисконтом</p>
+            </div>
+          </div>
+
+          <div class="pt-5">
+            <router-link
+              to="/register"
+              class="w-full bg-[#881337] hover:bg-[#9F1239] text-white py-2.5 rounded-xl text-xs font-bold block text-center transition shadow-xs"
+            >
+              Зареєструватися та оптимізувати витрати
+            </router-link>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Підвал -->
     <footer class="bg-white border-t border-[#E7E5E4] py-10 text-xs text-[#78716C]">
-      <div class="max-w-[1240px] mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div class="flex items-center gap-2 font-bold text-[#1e293b]">
-          <div class="w-6 h-6 rounded bg-[#881337] text-white flex items-center justify-center text-xs font-black">S</div>
+      <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="h-9 w-9 rounded-lg border border-[#E7E5E4] bg-white overflow-hidden shadow-xs flex items-center justify-center p-0.5 shrink-0">
+            <img :src="subtrackLogo" alt="SubTracker" class="w-full h-full object-contain scale-110 -translate-x-0.5 translate-y-0.5" />
+          </div>
           <span>SubTracker B2B © 2026. Всі права захищено.</span>
         </div>
-        <p class="text-[11px]">Курсова робота з дисципліни «Конструювання програмного забезпечення»</p>
+        <div>
+          <span>Курсова робота з дисципліни «Конструювання програмного забезпечення»</span>
+        </div>
       </div>
     </footer>
   </div>

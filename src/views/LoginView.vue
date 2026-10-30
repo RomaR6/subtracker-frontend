@@ -194,7 +194,7 @@ const quickFill = (userEmail: string) => {
       </p>
     </div>
 
-    <!-- Модалка Забули пароль з реальним бекенд-запитом -->
+    <!-- Модалка Забули пароль -->
     <div v-if="showForgotModal" class="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
       <div class="bg-white border border-[#E7E5E4] rounded-2xl p-6 max-w-sm w-full shadow-xl text-left">
         <div class="flex justify-between items-center mb-3">
@@ -204,7 +204,7 @@ const quickFill = (userEmail: string) => {
 
         <div v-if="!forgotSent" class="space-y-3.5 text-xs">
           <p class="text-[#78716C]">
-            Вкажіть пошту облікового запису. Сервіс згенерує посилання для встановлення нового пароля.
+            Вкажіть пошту облікового запису. Сервіс надішле лінк для відновлення доступу (діє 10 хвилин).
           </p>
 
           <div v-if="forgotError" class="p-2.5 bg-[#FEF2F2] border border-[#FECDD3] text-[#DC2626] rounded-lg">
@@ -247,7 +247,7 @@ const quickFill = (userEmail: string) => {
           </div>
           <p class="font-bold text-sm text-[#1e293b]">Запит успішно оброблено!</p>
           <p class="text-[#78716C]">
-            Якщо акаунт із поштою <strong>{{ forgotEmail }}</strong> зареєстровано в системі, лінк для відновлення згенеровано.
+            Інструкцію зі скидання пароля надіслано на <strong>{{ forgotEmail }}</strong>.
           </p>
           <button
             type="button"
@@ -260,33 +260,41 @@ const quickFill = (userEmail: string) => {
       </div>
     </div>
 
-    <!-- Модалка 2FA -->
+    <!-- Модалка 2FA з підтримкою Enter -->
     <div v-if="show2FaModal" class="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
       <div class="bg-white border border-[#E7E5E4] rounded-2xl p-6 max-w-sm w-full shadow-xl text-center">
         <h3 class="font-bold text-lg text-[#1e293b]">Двоетапна авторизація 2FA</h3>
         <p class="text-xs text-[#78716C] mt-1 mb-4">Введіть 6-значний код із вашого додатка Google Authenticator</p>
         
-        <input
-          v-model="totpCode"
-          maxlength="6"
-          type="text"
-          placeholder="123456"
-          class="w-full text-center tracking-[0.4em] font-mono font-black text-xl py-2 bg-[#FAF8F5] border border-[#E7E5E4] rounded-lg mb-2"
-        />
-        <p v-if="totpError" class="text-xs text-[#DC2626] font-bold mb-3">{{ totpError }}</p>
+        <form @submit.prevent="handle2FaVerify">
+          <input
+            v-model="totpCode"
+            maxlength="6"
+            type="text"
+            autofocus
+            placeholder="123456"
+            @keydown.enter.prevent="handle2FaVerify"
+            class="w-full text-center tracking-[0.4em] font-mono font-black text-xl py-2 bg-[#FAF8F5] border border-[#E7E5E4] rounded-lg mb-2 focus:outline-none focus:border-[#881337]"
+          />
+          <p v-if="totpError" class="text-xs text-[#DC2626] font-bold mb-3">{{ totpError }}</p>
 
-        <div class="flex gap-2 mt-4">
-          <button @click="show2FaModal = false" class="flex-1 py-2 bg-[#F5F5F4] text-xs font-bold rounded-lg hover:bg-[#E7E5E4] cursor-pointer">
-            Скасувати
-          </button>
-          <button
-            @click="handle2FaVerify"
-            :disabled="isVerifying || totpCode.length !== 6"
-            class="flex-1 py-2 bg-[#881337] text-white text-xs font-bold rounded-lg hover:bg-[#9F1239] cursor-pointer disabled:opacity-50"
-          >
-            {{ isVerifying ? "Перевірка..." : "Підтвердити" }}
-          </button>
-        </div>
+          <div class="flex gap-2 mt-4">
+            <button
+              type="button"
+              @click="show2FaModal = false"
+              class="flex-1 py-2 bg-[#F5F5F4] text-xs font-bold rounded-lg hover:bg-[#E7E5E4] cursor-pointer"
+            >
+              Скасувати
+            </button>
+            <button
+              type="submit"
+              :disabled="isVerifying || totpCode.length !== 6"
+              class="flex-1 py-2 bg-[#881337] text-white text-xs font-bold rounded-lg hover:bg-[#9F1239] cursor-pointer disabled:opacity-50"
+            >
+              {{ isVerifying ? "Перевірка..." : "Підтвердити" }}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
