@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import subtrackLogo from "../assets/subtrack_logo.jpg";
 import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import api from "../api/axios";
@@ -77,9 +78,9 @@ const navLinks = [
     <header class="bg-white border-b border-[#E7E5E4] px-6 py-3 flex items-center justify-between sticky top-0 z-40 shadow-xs">
       <div class="flex items-center gap-4">
         <router-link to="/app/dashboard" class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-lg bg-[#881337] text-white flex items-center justify-center font-black text-lg shadow-xs">
-            S
-          </div>
+          <div class="h-9 w-9 rounded-xl border border-[#E7E5E4] bg-white overflow-hidden shadow-xs flex items-center justify-center p-0.5 shrink-0">
+          <img :src="subtrackLogo" alt="SubTracker" class="w-full h-full object-contain scale-110 -translate-x-0.5 translate-y-0.5" />
+        </div>
           <span class="font-bold text-lg tracking-tight text-[#1e293b]">SubTracker B2B</span>
         </router-link>
 

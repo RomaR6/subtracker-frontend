@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import { useDialogStore } from "../stores/dialog";
 import { ref, computed, onMounted } from "vue";
 import api from "../api/axios";
 import { useWorkspaceStore } from "../stores/workspace";
 import SubscriptionModal from "../components/subscriptions/SubscriptionModal.vue";
 import InvoiceUploadModal from "../components/subscriptions/InvoiceUploadModal.vue";
 
+const dialog = useDialogStore();
 const wsStore = useWorkspaceStore();
 
 const subscriptions = ref<any[]>([]);
@@ -68,9 +70,17 @@ const toggleStatus = async (item: any) => {
 };
 
 const deleteSubscription = async (id: number) => {
-  if (!confirm("Ви дійсно бажаєте видалити цю підписку з реєстру?")) return;
+  const confirmed = await dialog.confirm({
+    title: "Видалення корпоративної підписки",
+    message: "Ви дійсно бажаєте видалити цю підписку з реєстру? Цю дію неможливо скасувати.",
+    confirmText: "Видалити",
+    cancelText: "Скасувати",
+    isDanger: true
+  });
+  if (!confirmed) return;
+  
   try {
-    await api.delete(`/subscriptions/${id}`);
+    await api.delete(`/subscriptions/item/${id}`);
     subscriptions.value = subscriptions.value.filter((s) => s.id !== id);
   } catch (err) {
     console.error("Помилка видалення:", err);

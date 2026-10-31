@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import subtrackLogo from "../assets/subtrack_logo.jpg";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "../stores/auth";
@@ -26,8 +27,8 @@ const handleRegister = async () => {
   <div class="min-h-screen bg-[#FAF8F5] flex flex-col justify-center items-center p-4">
     <div class="w-full max-w-md bg-white border border-[#E7E5E4] rounded-2xl p-8 shadow-sm text-left">
       <div class="text-center mb-6">
-        <div class="w-12 h-12 bg-[#881337] text-white rounded-xl flex items-center justify-center font-black text-2xl mx-auto mb-3 shadow-md">
-          S
+        <div class="w-14 h-14 rounded-2xl border border-[#E7E5E4] bg-white overflow-hidden shadow-sm flex items-center justify-center p-1 mx-auto mb-3">
+          <img :src="subtrackLogo" alt="SubTracker" class="w-full h-full object-contain scale-110 -translate-x-0.5 translate-y-0.5" />
         </div>
         <h1 class="text-2xl font-black text-[#1e293b]">Реєстрація простору</h1>
         <p class="text-xs text-[#78716C] mt-1">Створіть робочий простір для керування ліцензіями</p>

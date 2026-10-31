@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useDialogStore } from "../stores/dialog";
 import { ref, onMounted } from "vue";
 import api from "../api/axios";
 import { useAuthStore } from "../stores/auth";
@@ -16,11 +17,11 @@ const reviewError = ref("");
 const isReviewing = ref(false);
 
 const form = ref({
-  service_name: "",
+  software_name: "",
   estimated_cost: 45.0,
   currency_code: "USD",
-  billing_period: "monthly",
-  justification: ""
+  
+  reason: ""
 });
 
 const fetchRequests = async () => {
@@ -60,6 +61,14 @@ const submitRequest = async () => {
 };
 
 const handleReview = async (decision: "Approved" | "Rejected") => {
+  if (!reviewComment.value || reviewComment.value.trim().length < 3) {
+    dialog.alert("Коментар має містити щонайменше 3 символи (наприклад: 'Погоджено')");
+    return;
+  }
+  if (!reviewComment.value || reviewComment.value.trim().length < 3) {
+    reviewError.value = "Коментар має містити щонайменше 3 символи (наприклад: 'Схвалено', 'Погоджую', 'Немає бюджету')";
+    return;
+  }
   if (!reviewModalItem.value) return;
   reviewError.value = "";
   isReviewing.value = true;
@@ -126,7 +135,7 @@ const handleReview = async (decision: "Approved" | "Rejected") => {
           </div>
 
           <p class="mt-2 text-xs text-[#44403C] bg-[#FAF8F5] p-2.5 rounded-xl border border-[#E7E5E4] italic">
-            "{{ req.justification || 'Без додаткового коментаря' }}"
+            "{{ req.justification || req.reason || "Без додаткового обґрунтування" }}"
           </p>
 
           <p class="text-[10px] text-[#78716C] mt-3">
@@ -155,24 +164,18 @@ const handleReview = async (decision: "Approved" | "Rejected") => {
         <form @submit.prevent="submitRequest" class="mt-4 space-y-3 text-xs">
           <div>
             <label class="block font-bold text-[#44403C] mb-1">Назва софту чи ліцензії *</label>
-            <input v-model="form.service_name" required placeholder="JetBrains RustRover / Datadog" class="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E7E5E4] rounded-lg" />
+            <input v-model="form.software_name" required placeholder="JetBrains RustRover / Datadog" class="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E7E5E4] rounded-lg" />
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block font-bold text-[#44403C] mb-1">Орієнтовна вартість ($) *</label>
               <input v-model.number="form.estimated_cost" type="number" step="0.1" required class="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E7E5E4] rounded-lg" />
             </div>
-            <div>
-              <label class="block font-bold text-[#44403C] mb-1">Періодичність</label>
-              <select v-model="form.billing_period" class="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E7E5E4] rounded-lg">
-                <option value="monthly">Щомісячно</option>
-                <option value="yearly">Щорічно</option>
-              </select>
-            </div>
+            
           </div>
           <div>
             <label class="block font-bold text-[#44403C] mb-1">Виробниче обґрунтування необхідності *</label>
-            <textarea v-model="form.justification" required rows="3" placeholder="Для якого проекту або стеку необхідний цей інструмент..." class="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E7E5E4] rounded-lg"></textarea>
+            <textarea v-model="form.reason" required rows="3" placeholder="Для якого проекту або стеку необхідний цей інструмент..." class="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E7E5E4] rounded-lg"></textarea>
           </div>
           <div class="flex justify-end gap-2 pt-2 border-t border-[#E7E5E4]">
             <button type="button" @click="showCreateModal = false" class="px-3 py-1.5 bg-[#F5F5F4] rounded-lg font-bold cursor-pointer">Скасувати</button>
