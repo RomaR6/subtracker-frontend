@@ -44,12 +44,16 @@ calculateFop();
 
 const exportPdf = () => {
   const wsId = wsStore.currentWorkspace?.id || 1;
-  window.open(`http://127.0.0.1:8000/api/v1/analytics/export/pdf?workspace_id=${wsId}`, "_blank");
+  const net = netSalary.value || 65000;
+  const soft = customSoftwareCost.value || 3200;
+  window.open(`http://127.0.0.1:8000/api/v1/analytics/export/fop-pdf?workspace_id=${wsId}&net_salary=${net}&software_cost=${soft}`, "_blank");
 };
 
 const exportCsv = () => {
   const wsId = wsStore.currentWorkspace?.id || 1;
-  window.open(`http://127.0.0.1:8000/api/v1/analytics/export/csv?workspace_id=${wsId}`, "_blank");
+  const net = netSalary.value || 65000;
+  const soft = customSoftwareCost.value || 3200;
+  window.open(`http://127.0.0.1:8000/api/v1/analytics/export/fop-csv?workspace_id=${wsId}&net_salary=${net}&software_cost=${soft}`, "_blank");
 };
 </script>
 

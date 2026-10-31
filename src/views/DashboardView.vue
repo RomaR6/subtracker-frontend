@@ -1,5 +1,5 @@
-<script setup lang="ts">
-import { ref, onMounted } from "vue";
+﻿<script setup lang="ts">
+import { ref, onMounted, watch } from "vue";
 import api from "../api/axios";
 import { useWorkspaceStore } from "../stores/workspace";
 import CashFlowChart from "../components/dashboard/CashFlowChart.vue";
@@ -8,6 +8,7 @@ import UpcomingPaymentsList from "../components/dashboard/UpcomingPaymentsList.v
 const wsStore = useWorkspaceStore();
 const activeCurrency = ref<"UAH" | "USD">("UAH");
 const dashboardData = ref<any>(null);
+const topSubscriptions = ref<any[]>([]);
 const isLoading = ref(true);
 
 const fetchDashboard = async () => {
@@ -16,12 +17,23 @@ const fetchDashboard = async () => {
     const wsId = wsStore.currentWorkspace?.id || 1;
     const res = await api.get(`/analytics/dashboard?workspace_id=${wsId}`);
     dashboardData.value = res.data;
+
+    const subsRes = await api.get(`/subscriptions/?workspace_id=${wsId}&limit=5`);
+    if (Array.isArray(subsRes.data)) {
+      topSubscriptions.value = [...subsRes.data]
+        .sort((a, b) => (Number(b.cost_usd || b.cost) || 0) - (Number(a.cost_usd || a.cost) || 0))
+        .slice(0, 5);
+    }
   } catch (err) {
-    console.error("Не вдалося завантажити аналітику дашборду:", err);
+    console.error("Помилка завантаження дашборду:", err);
   } finally {
     isLoading.value = false;
   }
 };
+
+watch(() => wsStore.currentWorkspace?.id, () => {
+  fetchDashboard();
+});
 
 onMounted(async () => {
   if (!wsStore.currentWorkspace) {
@@ -33,7 +45,6 @@ onMounted(async () => {
 
 <template>
   <div class="space-y-6">
-    <!-- Top Dashboard Header with Currency Switcher -->
     <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
       <div class="text-left">
         <h1 class="text-2xl font-black text-[#1e293b] tracking-tight">
@@ -45,7 +56,6 @@ onMounted(async () => {
       </div>
 
       <div class="flex items-center gap-3">
-        <!-- Currency Toggle -->
         <div class="bg-white border border-[#E7E5E4] p-1 rounded-xl shadow-xs flex items-center text-xs font-bold">
           <button
             @click="activeCurrency = 'UAH'"
@@ -62,20 +72,10 @@ onMounted(async () => {
             $ USD
           </button>
         </div>
-
-        <button
-          @click="fetchDashboard"
-          title="Оновити дані"
-          class="bg-white border border-[#E7E5E4] p-2 rounded-xl text-xs text-[#78716C] hover:text-[#1e293b] shadow-xs transition cursor-pointer"
-        >
-          🔄
-        </button>
       </div>
     </div>
 
-    <!-- 4 KPI Metrics Matrix -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <!-- 1. Monthly Budget -->
       <div class="bg-white border border-[#E7E5E4] p-5 rounded-2xl shadow-xs text-left">
         <div class="flex justify-between items-start">
           <span class="text-xs font-bold text-[#78716C]">Місячні витрати</span>
@@ -96,7 +96,6 @@ onMounted(async () => {
         </p>
       </div>
 
-      <!-- 2. Active Licenses -->
       <div class="bg-white border border-[#E7E5E4] p-5 rounded-2xl shadow-xs text-left">
         <div class="flex justify-between items-start">
           <span class="text-xs font-bold text-[#78716C]">Активні ліцензії</span>
@@ -112,7 +111,6 @@ onMounted(async () => {
         </p>
       </div>
 
-      <!-- 3. Pending Approvals -->
       <div class="bg-white border border-[#E7E5E4] p-5 rounded-2xl shadow-xs text-left">
         <div class="flex justify-between items-start">
           <span class="text-xs font-bold text-[#78716C]">Заявки на розгляді</span>
@@ -128,7 +126,6 @@ onMounted(async () => {
         </p>
       </div>
 
-      <!-- 4. Avg Check per Engineer -->
       <div class="bg-white border border-[#E7E5E4] p-5 rounded-2xl shadow-xs text-left">
         <div class="flex justify-between items-start">
           <span class="text-xs font-bold text-[#78716C]">Середній чек / спеціаліст</span>
@@ -143,9 +140,7 @@ onMounted(async () => {
       </div>
     </div>
 
-    <!-- Charts and Upcoming Payments Split -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-      <!-- Cash Flow Bar Chart (8 cols) -->
       <div class="lg:col-span-8 bg-white border border-[#E7E5E4] p-6 rounded-2xl shadow-xs text-left">
         <div class="flex items-center justify-between mb-4">
           <div>
@@ -163,7 +158,6 @@ onMounted(async () => {
         />
       </div>
 
-      <!-- Upcoming 14-days Payments (4 cols) -->
       <div class="lg:col-span-4 bg-white border border-[#E7E5E4] p-6 rounded-2xl shadow-xs text-left">
         <div class="flex items-center justify-between mb-4">
           <h3 class="font-bold text-sm text-[#1e293b]">Найближчі списання</h3>
@@ -176,6 +170,56 @@ onMounted(async () => {
           :items="dashboardData?.upcoming_payments_14_days || []"
           :currency="activeCurrency"
         />
+      </div>
+    </div>
+
+    <div class="mt-8 bg-white border border-[#E7E5E4] rounded-2xl p-6 shadow-xs text-left">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h3 class="font-black text-sm text-[#1e293b]">Ключові цифрові активи за обсягом витрат</h3>
+          <p class="text-[11px] text-[#78716C] mt-0.5">Підписки з найбільшим впливом на щомісячний бюджет компанії</p>
+        </div>
+        <router-link to="/app/subscriptions" class="text-xs font-bold text-[#881337] hover:underline cursor-pointer">
+          Усі підписки →
+        </router-link>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="border-b border-[#E7E5E4] text-[#78716C] font-bold pb-2">
+              <th class="py-2.5 px-3">Сервіс</th>
+              <th class="py-2.5 px-3">Категорія</th>
+              <th class="py-2.5 px-3">Відповідальний</th>
+              <th class="py-2.5 px-3">Період</th>
+              <th class="py-2.5 px-3">Вартість ($ / ₴)</th>
+              <th class="py-2.5 px-3">Статус</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[#F5F5F4]">
+            <tr v-for="sub in topSubscriptions" :key="sub.id" class="hover:bg-[#FAF8F5] transition">
+              <td class="py-3 px-3 flex items-center gap-2.5 font-bold text-[#1e293b]">
+                <img :src="sub.logo_url || 'https://www.google.com/s2/favicons?domain=' + (sub.service_url || 'cloud.google.com') + '&sz=64'" class="w-7 h-7 rounded-lg border border-[#E7E5E4] p-0.5 object-contain" />
+                <div>
+                  <div>{{ sub.service_name }}</div>
+                  <div class="text-[10px] text-[#78716C] font-normal">{{ sub.service_url }}</div>
+                </div>
+              </td>
+              <td class="py-3 px-3 text-[#44403C]">{{ sub.category || sub.category_name || 'DevTools' }}</td>
+              <td class="py-3 px-3 text-[#44403C] font-medium">{{ sub.assigned_user || sub.assigned_user_name || 'Олександр Кравченко' }}</td>
+              <td class="py-3 px-3 capitalize text-[#78716C]">{{ sub.billing_period }}</td>
+              <td class="py-3 px-3 font-bold text-[#1e293b]">
+                <div>${{ Number(sub.cost_usd || sub.cost).toFixed(2) }}</div>
+                <div class="text-[10px] text-[#78716C] font-normal">₴{{ Math.round((Number(sub.cost_usd || sub.cost) || 0) * (wsStore.usdRate || 45.35)).toLocaleString('uk-UA') }}</div>
+              </td>
+              <td class="py-3 px-3">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#ECFDF5] text-[#059669] border border-[#A7F3D0]">
+                  Активна
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>

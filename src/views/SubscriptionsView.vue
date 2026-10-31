@@ -250,6 +250,17 @@ const exportPdf = () => {
       </table>
     </div>
 
+      <!-- Пагінація реєстру -->
+      <div class="mt-4 flex items-center justify-between text-xs text-[#78716C] px-2">
+        <div>Показано <strong>{{ subscriptions.length }}</strong> із <strong>{{ subscriptions.length }}</strong> записів</div>
+        <div class="flex items-center gap-1">
+          <button disabled class="px-2.5 py-1 rounded-md border border-[#E7E5E4] bg-white opacity-50 cursor-not-allowed">← Попередня</button>
+          <span class="px-3 py-1 rounded-md bg-[#881337] text-white font-bold">1</span>
+          <button disabled class="px-2.5 py-1 rounded-md border border-[#E7E5E4] bg-white opacity-50 cursor-not-allowed">Наступна →</button>
+        </div>
+      </div>
+  
+
     <SubscriptionModal
       :show="showAddModal"
       :edit-item="editingItem"
