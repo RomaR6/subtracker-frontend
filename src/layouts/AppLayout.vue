@@ -1,7 +1,7 @@
-<script setup lang="ts">
-import subtrackLogo from "../assets/subtrack_logo.jpg";
-import { ref, onMounted } from "vue";
+﻿<script setup lang="ts">
+import { ref, computed, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import subtrackLogo from "../assets/subtrack_logo.jpg";
 import api from "../api/axios";
 import { useAuthStore } from "../stores/auth";
 import { useWorkspaceStore } from "../stores/workspace";
@@ -11,6 +11,7 @@ const router = useRouter();
 const authStore = useAuthStore();
 const wsStore = useWorkspaceStore();
 
+const pendingRequestsCount = ref(0);
 const showWsDropdown = ref(false);
 const showNewWsModal = ref(false);
 const newWsName = ref("");
@@ -19,9 +20,24 @@ const isCreatingWs = ref(false);
 const isSyncing = ref(false);
 const syncFeedback = ref("");
 
+const fetchPendingCount = async () => {
+  try {
+    const wsId = wsStore.currentWorkspace?.id || 1;
+    const res = await api.get('/requests/', { params: { workspace_id: wsId } });
+    if (Array.isArray(res.data)) {
+      pendingRequestsCount.value = res.data.filter((r: any) => r.status === 'Pending').length;
+    }
+  } catch (e) {
+    pendingRequestsCount.value = 0;
+  }
+};
+
+watch(() => wsStore.currentWorkspace?.id, fetchPendingCount);
+
 onMounted(async () => {
   await wsStore.fetchRates();
   await wsStore.fetchWorkspaces();
+  await fetchPendingCount();
 });
 
 const syncNbuRates = async () => {
@@ -62,15 +78,25 @@ const createWorkspace = async () => {
   }
 };
 
-const navLinks = [
-  { name: "Дашборд витрат", route: "/app/dashboard" },
-  { name: "Каталог підписок", route: "/app/subscriptions" },
-  { name: "Центр погоджень", route: "/app/requests" },
-  { name: "Фінансова аналітика", route: "/app/analytics" },
-  { name: "Команда та ролі", route: "/app/team" },
-  { name: "Налаштування", route: "/app/settings" },
-  { name: "Особистий кабінет", route: "/app/profile" }
-];
+// RBAC: динамічне формування пунктів меню залежно від ролі користувача
+const navLinks = computed(() => {
+  const isMember = authStore.role === "Member";
+
+  const allLinks = [
+    { name: "Дашборд витрат", route: "/app/dashboard" },
+    { name: "Каталог підписок", route: "/app/subscriptions" },
+    { name: "Центр погоджень", route: "/app/requests", hasBadge: true },
+    { name: "Фінансова аналітика", route: "/app/analytics", adminOnly: true },
+    { name: "Команда та ролі", route: "/app/team" },
+    { name: "Налаштування", route: "/app/settings", adminOnly: true },
+    { name: "Особистий кабінет", route: "/app/profile" }
+  ];
+
+  if (isMember) {
+    return allLinks.filter(l => !l.adminOnly);
+  }
+  return allLinks;
+});
 </script>
 
 <template>
@@ -79,8 +105,8 @@ const navLinks = [
       <div class="flex items-center gap-4">
         <router-link to="/app/dashboard" class="flex items-center gap-2">
           <div class="h-9 w-9 rounded-xl border border-[#E7E5E4] bg-white overflow-hidden shadow-xs flex items-center justify-center p-0.5 shrink-0">
-          <img :src="subtrackLogo" alt="SubTracker" class="w-full h-full object-contain scale-110 -translate-x-0.5 translate-y-0.5" />
-        </div>
+            <img :src="subtrackLogo" alt="SubTracker" class="w-full h-full object-contain scale-110 -translate-x-0.5 translate-y-0.5" />
+          </div>
           <span class="font-bold text-lg tracking-tight text-[#1e293b]">SubTracker B2B</span>
         </router-link>
 
@@ -166,6 +192,13 @@ const navLinks = [
         :class="route.path === link.route ? 'text-[#881337] font-bold border-b-2 border-[#881337]' : 'text-[#78716C] hover:text-[#1e293b]'"
       >
         <span>{{ link.name }}</span>
+        <!-- Бейдж активних заявок на розгляді -->
+        <span
+          v-if="link.hasBadge && pendingRequestsCount > 0"
+          class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-black bg-[#881337] text-white shadow-xs"
+        >
+          {{ pendingRequestsCount }}
+        </span>
       </router-link>
 
       <router-link
