@@ -1,9 +1,11 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, onMounted } from "vue";
+import { useAuthStore } from "../stores/auth";
 import api from "../api/axios";
 import { useWorkspaceStore } from "../stores/workspace";
 
 const wsStore = useWorkspaceStore();
+const authStore = useAuthStore();
 
 const members = ref<any[]>([]);
 const isLoading = ref(true);
@@ -75,7 +77,7 @@ const copyLink = () => {
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-      <div class="lg:col-span-8 bg-white border border-[#E7E5E4] rounded-2xl shadow-xs overflow-hidden">
+      <div :class="authStore.isAdminOrManager ? 'lg:col-span-8' : 'lg:col-span-12'" class="bg-white border border-[#E7E5E4] rounded-2xl shadow-xs overflow-hidden">
         <table class="w-full text-left text-xs border-collapse">
           <thead>
             <tr class="bg-[#FAF8F5] border-b border-[#E7E5E4] text-[#78716C] font-bold">
@@ -102,7 +104,7 @@ const copyLink = () => {
         </table>
       </div>
 
-      <div class="lg:col-span-4 bg-white border border-[#E7E5E4] p-5 rounded-2xl shadow-xs space-y-4">
+      <div v-if="authStore.isAdminOrManager" class="lg:col-span-4 bg-white border border-[#E7E5E4] p-5 rounded-2xl shadow-xs space-y-4">
         <h3 class="font-bold text-sm text-[#1e293b]">Запросити інженера в команду</h3>
 
         <div v-if="errorMsg" class="p-2.5 bg-[#FEF2F2] border border-[#FECDD3] text-[#DC2626] rounded-lg text-xs font-mono">

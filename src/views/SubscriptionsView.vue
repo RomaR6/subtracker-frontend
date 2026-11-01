@@ -1,13 +1,15 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { useDialogStore } from "../stores/dialog";
 import { ref, computed, onMounted } from "vue";
 import api from "../api/axios";
+import { useAuthStore } from "../stores/auth";
 import { useWorkspaceStore } from "../stores/workspace";
 import SubscriptionModal from "../components/subscriptions/SubscriptionModal.vue";
 import InvoiceUploadModal from "../components/subscriptions/InvoiceUploadModal.vue";
 
 const dialog = useDialogStore();
 const wsStore = useWorkspaceStore();
+const authStore = useAuthStore();
 
 const subscriptions = ref<any[]>([]);
 const isLoading = ref(true);
@@ -53,11 +55,13 @@ const filteredSubscriptions = computed(() => {
 });
 
 const openEditModal = (item: any) => {
+  if (!authStore.isAdminOrManager) return;
   editingItem.value = item;
   showAddModal.value = true;
 };
 
 const toggleStatus = async (item: any) => {
+  if (!authStore.isAdminOrManager) return;
   try {
     const newStatus = item.status === "active" ? "inactive" : "active";
     await api.patch(`/subscriptions/${item.id}/toggle-status`, null, {
@@ -70,6 +74,7 @@ const toggleStatus = async (item: any) => {
 };
 
 const deleteSubscription = async (id: number) => {
+  if (!authStore.isAdminOrManager) return;
   const confirmed = await dialog.confirm({
     title: "Видалення корпоративної підписки",
     message: "Ви дійсно бажаєте видалити цю підписку з реєстру? Цю дію неможливо скасувати.",
@@ -108,6 +113,7 @@ const exportPdf = () => {
 
       <div class="flex flex-wrap items-center gap-2.5">
         <button
+          v-if="authStore.isAdminOrManager"
           @click="exportCsv"
           class="px-3.5 py-2 bg-white hover:bg-[#F5F5F4] text-[#1e293b] border border-[#E7E5E4] rounded-lg text-xs font-bold shadow-xs transition flex items-center gap-1.5 cursor-pointer"
         >
@@ -115,6 +121,7 @@ const exportPdf = () => {
         </button>
 
         <button
+          v-if="authStore.isAdminOrManager"
           @click="exportPdf"
           class="px-3.5 py-2 bg-white hover:bg-[#F5F5F4] text-[#1e293b] border border-[#E7E5E4] rounded-lg text-xs font-bold shadow-xs transition flex items-center gap-1.5 cursor-pointer"
         >
@@ -122,6 +129,7 @@ const exportPdf = () => {
         </button>
 
         <button
+          v-if="authStore.isAdminOrManager"
           @click="showInvoiceModal = true"
           class="px-3.5 py-2 bg-white hover:bg-[#F5F5F4] text-[#881337] border border-[#FECDD3] rounded-lg text-xs font-bold shadow-xs transition flex items-center gap-1.5 cursor-pointer"
         >
@@ -129,6 +137,7 @@ const exportPdf = () => {
         </button>
 
         <button
+          v-if="authStore.isAdminOrManager"
           @click="editingItem = null; showAddModal = true"
           class="px-4 py-2 bg-[#881337] hover:bg-[#9F1239] text-white rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5 cursor-pointer active:scale-95"
         >
@@ -177,7 +186,7 @@ const exportPdf = () => {
             <th class="py-3 px-4 text-right">Вартість</th>
             <th class="py-3 px-4">Наступне списання</th>
             <th class="py-3 px-4 text-center">Статус</th>
-            <th class="py-3 px-4 text-right">Дії</th>
+            <th v-if="authStore.isAdminOrManager" class="py-3 px-4 text-right">Дії</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-[#E7E5E4]">
@@ -221,15 +230,23 @@ const exportPdf = () => {
 
             <td class="py-3 px-4 text-center">
               <button
+                v-if="authStore.isAdminOrManager"
                 @click="toggleStatus(item)"
                 :class="item.status === 'active' ? 'bg-[#ECFDF5] text-[#059669] border-[#A7F3D0]' : 'bg-[#F5F5F4] text-[#78716C] border-[#E7E5E4]'"
                 class="px-2.5 py-0.5 rounded-full border text-[10px] font-bold cursor-pointer transition hover:opacity-80"
               >
                 {{ item.status === "active" ? "Активна" : "Пауза" }}
               </button>
+              <span
+                v-else
+                :class="item.status === 'active' ? 'bg-[#ECFDF5] text-[#059669] border-[#A7F3D0]' : 'bg-[#F5F5F4] text-[#78716C] border-[#E7E5E4]'"
+                class="px-2.5 py-0.5 rounded-full border text-[10px] font-bold inline-block"
+              >
+                {{ item.status === "active" ? "Активна" : "Пауза" }}
+              </span>
             </td>
 
-            <td class="py-3 px-4 text-right">
+            <td v-if="authStore.isAdminOrManager" class="py-3 px-4 text-right">
               <div class="flex items-center justify-end gap-2">
                 <button @click="openEditModal(item)" class="text-[#78716C] hover:text-[#881337] font-semibold text-xs p-1 cursor-pointer" title="Редагувати">
                   ✏️
@@ -242,7 +259,7 @@ const exportPdf = () => {
           </tr>
 
           <tr v-if="filteredSubscriptions.length === 0">
-            <td colspan="8" class="py-12 text-center text-xs text-[#78716C]">
+            <td :colspan="authStore.isAdminOrManager ? 8 : 7" class="py-12 text-center text-xs text-[#78716C]">
               За вашим запитом не знайдено жодної підписки.
             </td>
           </tr>
@@ -250,18 +267,17 @@ const exportPdf = () => {
       </table>
     </div>
 
-      <!-- Пагінація реєстру -->
-      <div class="mt-4 flex items-center justify-between text-xs text-[#78716C] px-2">
-        <div>Показано <strong>{{ subscriptions.length }}</strong> із <strong>{{ subscriptions.length }}</strong> записів</div>
-        <div class="flex items-center gap-1">
-          <button disabled class="px-2.5 py-1 rounded-md border border-[#E7E5E4] bg-white opacity-50 cursor-not-allowed">← Попередня</button>
-          <span class="px-3 py-1 rounded-md bg-[#881337] text-white font-bold">1</span>
-          <button disabled class="px-2.5 py-1 rounded-md border border-[#E7E5E4] bg-white opacity-50 cursor-not-allowed">Наступна →</button>
-        </div>
+    <div class="mt-4 flex items-center justify-between text-xs text-[#78716C] px-2">
+      <div>Показано <strong>{{ subscriptions.length }}</strong> із <strong>{{ subscriptions.length }}</strong> записів</div>
+      <div class="flex items-center gap-1">
+        <button disabled class="px-2.5 py-1 rounded-md border border-[#E7E5E4] bg-white opacity-50 cursor-not-allowed">← Попередня</button>
+        <span class="px-3 py-1 rounded-md bg-[#881337] text-white font-bold">1</span>
+        <button disabled class="px-2.5 py-1 rounded-md border border-[#E7E5E4] bg-white opacity-50 cursor-not-allowed">Наступна →</button>
       </div>
-  
+    </div>
 
     <SubscriptionModal
+      v-if="authStore.isAdminOrManager"
       :show="showAddModal"
       :edit-item="editingItem"
       :workspace-id="wsStore.currentWorkspace?.id || 1"
@@ -270,6 +286,7 @@ const exportPdf = () => {
     />
 
     <InvoiceUploadModal
+      v-if="authStore.isAdminOrManager"
       :show="showInvoiceModal"
       :workspace-id="wsStore.currentWorkspace?.id || 1"
       @close="showInvoiceModal = false"

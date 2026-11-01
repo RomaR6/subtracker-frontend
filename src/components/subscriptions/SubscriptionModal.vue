@@ -155,7 +155,16 @@ const handleSubmit = async () => {
             </select>
           </div>
           <div>
-            <label class="block font-bold text-[#44403C] mb-1">Наступна сплата *</label>
+            
+          <div>
+            <label class="block font-bold text-[#44403C] mb-1">Статус ліцензії</label>
+            <select v-model="form.status" class="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E7E5E4] rounded-lg text-xs">
+              <option value="active">Активна (в роботі)</option>
+              <option value="inactive">Призупинена (на паузі)</option>
+            </select>
+          </div>
+  
+        <label class="block font-bold text-[#44403C] mb-1">Наступна сплата *</label>
             <input v-model="form.next_payment_date" type="date" :min="todayDate" required class="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E7E5E4] rounded-lg text-xs" />
           </div>
         </div>

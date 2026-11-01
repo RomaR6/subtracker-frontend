@@ -1,9 +1,11 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, onMounted } from "vue";
 import api from "../api/axios";
+import { useAuthStore } from "../stores/auth";
 import { useWorkspaceStore } from "../stores/workspace";
 
 const wsStore = useWorkspaceStore();
+const authStore = useAuthStore();
 
 const webhookUrl = ref("");
 const statusFeedback = ref("");
@@ -33,6 +35,7 @@ onMounted(async () => {
 });
 
 const saveWebhook = async () => {
+  if (!authStore.isAdminOrManager) return;
   try {
     const wsId = wsStore.currentWorkspace?.id || 1;
     await api.post(`/workspaces/${wsId}/webhooks`, { webhook_url: webhookUrl.value });
@@ -44,6 +47,7 @@ const saveWebhook = async () => {
 };
 
 const testWebhook = async () => {
+  if (!authStore.isAdminOrManager) return;
   isTestingWebhook.value = true;
   statusFeedback.value = "";
   try {
@@ -58,6 +62,7 @@ const testWebhook = async () => {
 };
 
 const addCategory = async () => {
+  if (!authStore.isAdminOrManager) return;
   if (!newCategoryName.value.trim()) return;
   try {
     await api.post("/subscriptions/categories", { name: newCategoryName.value.trim() });
@@ -70,7 +75,9 @@ const addCategory = async () => {
 };
 
 const selectCategoryChip = (catName: string) => {
-  newCategoryName.value = catName;
+  if (authStore.isAdminOrManager) {
+    newCategoryName.value = catName;
+  }
 };
 </script>
 
@@ -81,7 +88,12 @@ const selectCategoryChip = (catName: string) => {
       <p class="text-xs text-[#78716C] mt-1">Інтеграції вихідних вебхуків, підключення Telegram-сповіщень та довідники категорій</p>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+    <div v-if="!authStore.isAdminOrManager" class="bg-[#FEF2F2] border border-[#FECDD3] p-6 rounded-2xl text-xs text-[#881337]">
+      <p class="font-bold text-sm mb-1">Режим обмеженого доступу</p>
+      <p>Зміна системних вебхуків та структури категорій простору доступна лише користувачам із ролями <strong>Admin</strong> або <strong>Manager</strong>.</p>
+    </div>
+
+    <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
       <div class="bg-white border border-[#E7E5E4] p-6 rounded-2xl shadow-xs space-y-4">
         <h3 class="font-bold text-sm text-[#1e293b]">Вихідні сповіщення (Webhooks Slack / Discord)</h3>
         <p class="text-xs text-[#78716C]">

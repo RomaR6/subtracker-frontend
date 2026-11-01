@@ -1,5 +1,4 @@
-<script setup lang="ts">
-import { useDialogStore } from "../stores/dialog";
+﻿<script setup lang="ts">
 import { ref, onMounted } from "vue";
 import api from "../api/axios";
 import { useAuthStore } from "../stores/auth";
@@ -20,7 +19,6 @@ const form = ref({
   software_name: "",
   estimated_cost: 45.0,
   currency_code: "USD",
-  
   reason: ""
 });
 
@@ -47,13 +45,16 @@ onMounted(async () => {
 const submitRequest = async () => {
   try {
     const wsId = wsStore.currentWorkspace?.id || 1;
+    const reqUserId = authStore.user?.id || undefined;
     await api.post("/requests/", {
       ...form.value,
-      workspace_id: wsId
+      workspace_id: wsId,
+      requester_id: reqUserId
     });
     showCreateModal.value = false;
-    form.value.service_name = "";
-    form.value.justification = "";
+    form.value.software_name = "";
+    form.value.estimated_cost = 45.0;
+    form.value.reason = "";
     await fetchRequests();
   } catch (err) {
     console.error(err);
@@ -62,22 +63,20 @@ const submitRequest = async () => {
 
 const handleReview = async (decision: "Approved" | "Rejected") => {
   if (!reviewComment.value || reviewComment.value.trim().length < 3) {
-    dialog.alert("Коментар має містити щонайменше 3 символи (наприклад: 'Погоджено')");
-    return;
-  }
-  if (!reviewComment.value || reviewComment.value.trim().length < 3) {
     reviewError.value = "Коментар має містити щонайменше 3 символи (наприклад: 'Схвалено', 'Погоджую', 'Немає бюджету')";
     return;
   }
   if (!reviewModalItem.value) return;
   reviewError.value = "";
   isReviewing.value = true;
-  const commentText = reviewComment.value.trim() || (decision === "Approved" ? "Погоджено керівником" : "Відхилено за лімітом бюджету");
+  const commentText = reviewComment.value.trim();
 
   try {
+    const reviewerUserId = authStore.user?.id || undefined;
     await api.patch(`/requests/${reviewModalItem.value.id}/review`, {
       status: decision,
-      review_comment: commentText
+      review_comment: commentText,
+      reviewer_id: reviewerUserId
     });
     reviewModalItem.value = null;
     reviewComment.value = "";
@@ -116,7 +115,10 @@ const handleReview = async (decision: "Approved" | "Rejected") => {
       >
         <div>
           <div class="flex items-start justify-between">
-            <span class="text-xs font-black text-[#1e293b]">{{ req.service_name }}</span>
+            <div class="flex items-center gap-2">
+              <img :src="req.logo_url || 'https://www.google.com/s2/favicons?domain=google.com&sz=64'" class="w-6 h-6 rounded border border-[#E7E5E4] p-0.5 object-contain" />
+              <span class="text-xs font-black text-[#1e293b]">{{ req.software_name || req.service_name }}</span>
+            </div>
             <span
               :class="{
                 'bg-[#FEF3C7] text-[#92400E] border-[#FDE68A]': req.status?.toLowerCase() === 'pending',
@@ -130,17 +132,19 @@ const handleReview = async (decision: "Approved" | "Rejected") => {
           </div>
 
           <div class="mt-3 flex items-baseline gap-1 text-sm font-black text-[#881337]">
-            <span>${{ req.estimated_cost }}</span>
-            <span class="text-[10px] text-[#78716C] font-normal">/ {{ req.billing_period }}</span>
+            <span>${{ Number(req.estimated_cost).toFixed(2) }}</span>
+            <span class="text-[10px] text-[#78716C] font-normal">({{ Math.round(Number(req.estimated_cost_uah || req.estimated_cost * 45.35)).toLocaleString('uk-UA') }} ₴)</span>
           </div>
 
           <p class="mt-2 text-xs text-[#44403C] bg-[#FAF8F5] p-2.5 rounded-xl border border-[#E7E5E4] italic">
-            "{{ req.justification || req.reason || "Без додаткового обґрунтування" }}"
+            "{{ req.reason || req.justification || 'Без додаткового обґрунтування' }}"
           </p>
 
-          <p class="text-[10px] text-[#78716C] mt-3">
-            Подав: <span class="font-bold text-[#1e293b]">{{ req.requester_name || req.requester?.first_name || 'Співробітник' }}</span>
-          </p>
+          <div class="text-[10px] text-[#78716C] mt-3 space-y-1">
+            <p>Подав: <span class="font-bold text-[#1e293b]">{{ req.requester_name || 'Співробітник' }}</span></p>
+            <p v-if="req.reviewer_name">Розглянув: <span class="font-bold text-[#1e293b]">{{ req.reviewer_name }}</span></p>
+            <p v-if="req.review_comment" class="italic text-[#881337]">Коментар: {{ req.review_comment }}</p>
+          </div>
         </div>
 
         <div v-if="req.status?.toLowerCase() === 'pending' && authStore.isAdminOrManager" class="mt-4 pt-3 border-t border-[#E7E5E4]">
@@ -166,12 +170,9 @@ const handleReview = async (decision: "Approved" | "Rejected") => {
             <label class="block font-bold text-[#44403C] mb-1">Назва софту чи ліцензії *</label>
             <input v-model="form.software_name" required placeholder="JetBrains RustRover / Datadog" class="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E7E5E4] rounded-lg" />
           </div>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block font-bold text-[#44403C] mb-1">Орієнтовна вартість ($) *</label>
-              <input v-model.number="form.estimated_cost" type="number" step="0.1" required class="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E7E5E4] rounded-lg" />
-            </div>
-            
+          <div>
+            <label class="block font-bold text-[#44403C] mb-1">Орієнтовна вартість ($) *</label>
+            <input v-model.number="form.estimated_cost" type="number" step="0.1" required class="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E7E5E4] rounded-lg" />
           </div>
           <div>
             <label class="block font-bold text-[#44403C] mb-1">Виробниче обґрунтування необхідності *</label>
@@ -188,7 +189,7 @@ const handleReview = async (decision: "Approved" | "Rejected") => {
     <div v-if="reviewModalItem" class="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
       <div class="bg-white border border-[#E7E5E4] rounded-2xl max-w-sm w-full p-6 shadow-xl text-left">
         <div class="flex justify-between items-center">
-          <h3 class="font-bold text-base text-[#1e293b]">Розгляд: {{ reviewModalItem.service_name }}</h3>
+          <h3 class="font-bold text-base text-[#1e293b]">Розгляд: {{ reviewModalItem.software_name || reviewModalItem.service_name }}</h3>
           <button @click="reviewModalItem = null" class="text-[#78716C] p-1 text-sm cursor-pointer">✕</button>
         </div>
         <p class="text-xs text-[#78716C] mt-1">Орієнтовна вартість: ${{ reviewModalItem.estimated_cost }}</p>

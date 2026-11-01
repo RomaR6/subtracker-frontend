@@ -1,9 +1,11 @@
-<script setup lang="ts">
-import { ref } from "vue";
+﻿<script setup lang="ts">
+import { ref, onMounted } from "vue";
 import api from "../api/axios";
+import { useAuthStore } from "../stores/auth";
 import { useWorkspaceStore } from "../stores/workspace";
 
 const wsStore = useWorkspaceStore();
+const authStore = useAuthStore();
 
 const netSalary = ref(65000);
 const customSoftwareCost = ref(3200);
@@ -11,6 +13,7 @@ const calculationResult = ref<any>(null);
 const isCalculating = ref(false);
 
 const calculateFop = async () => {
+  if (!authStore.isAdminOrManager) return;
   isCalculating.value = true;
   try {
     const wsId = wsStore.currentWorkspace?.id || 1;
@@ -40,7 +43,9 @@ const calculateFop = async () => {
   }
 };
 
-calculateFop();
+onMounted(() => {
+  calculateFop();
+});
 
 const exportPdf = () => {
   const wsId = wsStore.currentWorkspace?.id || 1;
@@ -65,7 +70,7 @@ const exportCsv = () => {
         <p class="text-xs text-[#78716C] mt-1">Розрахунок сукупного навантаження за моделлю 3-ї групи (5% + ЄСВ 1 760 ₴ + софт)</p>
       </div>
 
-      <div class="flex gap-2">
+      <div v-if="authStore.isAdminOrManager" class="flex gap-2">
         <button @click="exportCsv" class="px-3.5 py-2 bg-white border border-[#E7E5E4] rounded-lg text-xs font-bold hover:bg-[#FAF8F5] cursor-pointer">
           📥 Звіт CSV
         </button>
@@ -75,7 +80,12 @@ const exportCsv = () => {
       </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    <div v-if="!authStore.isAdminOrManager" class="bg-[#FEF2F2] border border-[#FECDD3] p-8 rounded-2xl text-center text-xs text-[#881337]">
+      <p class="font-black text-sm mb-1">Доступ обмежено</p>
+      <p>Фінансова собівартість та податкові нарахування доступні для перегляду лише фінансовому відділу та керівництву.</p>
+    </div>
+
+    <div v-else class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
       <div class="lg:col-span-5 bg-white border border-[#E7E5E4] p-6 rounded-2xl shadow-xs space-y-4">
         <h3 class="font-bold text-sm text-[#1e293b]">Вхідні параметри спеціаліста</h3>
 
