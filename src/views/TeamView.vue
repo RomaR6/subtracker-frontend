@@ -1,9 +1,11 @@
 ﻿<script setup lang="ts">
+import { useDialogStore } from "../stores/dialog";
 import { ref, onMounted } from "vue";
 import { useAuthStore } from "../stores/auth";
 import api from "../api/axios";
 import { useWorkspaceStore } from "../stores/workspace";
 
+const dialog = useDialogStore();
 const wsStore = useWorkspaceStore();
 const authStore = useAuthStore();
 
@@ -35,6 +37,20 @@ onMounted(async () => {
   await fetchMembers();
 });
 
+const isCurrentUser = (member: any): boolean => {
+  const currentEmail = authStore.user?.email?.toLowerCase();
+  const memberEmail = (member.user?.email || member.email || "").toLowerCase();
+  if (currentEmail && memberEmail && currentEmail === memberEmail) return true;
+  if (authStore.user?.id && member.user?.id && String(authStore.user.id) === String(member.user.id)) return true;
+  return false;
+};
+
+const isOwner = (member: any): boolean => {
+  const ownerId = wsStore.currentWorkspace?.owner_id;
+  if (!ownerId) return false;
+  return String(ownerId) === String(member.user?.id || member.user_id);
+};
+
 const generateInvite = async () => {
   if (!inviteEmail.value.trim()) {
     errorMsg.value = "Будь ласка, введіть корпоративний email співробітника.";
@@ -65,6 +81,37 @@ const copyLink = () => {
   copySuccess.value = true;
   setTimeout(() => { copySuccess.value = false; }, 2000);
 };
+
+const handleRoleChange = async (member: any, newRole: string) => {
+  try {
+    const wsId = wsStore.currentWorkspace?.id || 1;
+    await api.patch(`/workspaces/${wsId}/members/${member.id}`, { role_name: newRole });
+    member.role_name = newRole;
+    await fetchMembers();
+  } catch (err: any) {
+    dialog.alert(err.response?.data?.detail || "Не вдалося змінити роль користувача.");
+    await fetchMembers();
+  }
+};
+
+const removeMember = async (member: any) => {
+  const confirmed = await dialog.confirm({
+    title: "Вилучення співробітника з простору",
+    message: `Ви дійсно бажаєте вилучити ${member.user?.first_name || 'користувача'} (${member.user?.email}) з робочого простору? Усі його закріплені підписки автоматично перейдуть на паузу.`,
+    confirmText: "Вилучити",
+    cancelText: "Скасувати",
+    isDanger: true
+  });
+  if (!confirmed) return;
+
+  try {
+    const wsId = wsStore.currentWorkspace?.id || 1;
+    await api.delete(`/workspaces/${wsId}/members/${member.id}`);
+    members.value = members.value.filter(m => m.id !== member.id);
+  } catch (err: any) {
+    dialog.alert(err.response?.data?.detail || "Помилка при вилученні співробітника.");
+  }
+};
 </script>
 
 <template>
@@ -84,21 +131,68 @@ const copyLink = () => {
               <th class="py-3 px-4">Спеціаліст</th>
               <th class="py-3 px-4">Email</th>
               <th class="py-3 px-4">Роль у просторі</th>
-              <th class="py-3 px-4">Статус</th>
+              <th class="py-3 px-4 text-center">Статус</th>
+              <th v-if="authStore.role === 'Admin'" class="py-3 px-4 text-right">Дії</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-[#E7E5E4]">
             <tr v-for="m in members" :key="m.id" class="hover:bg-[#FAF8F5]/80">
               <td class="py-3 px-4 font-bold text-[#1e293b]">
                 {{ m.user?.first_name || m.first_name || "Користувач" }} {{ m.user?.last_name || m.last_name || "" }}
+                <span v-if="isCurrentUser(m)" class="ml-1 text-[10px] text-[#881337] font-semibold">(Ви)</span>
               </td>
               <td class="py-3 px-4 text-[#78716C]">{{ m.user?.email || m.email }}</td>
               <td class="py-3 px-4">
-                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#FEF2F2] text-[#881337] border border-[#FECDD3]">
+                <!-- Власник простору -->
+                <span
+                  v-if="isOwner(m)"
+                  class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#FEF2F2] text-[#881337] border border-[#FECDD3]"
+                >
+                  Admin (Власник)
+                </span>
+
+                <!-- Поточний залогінений користувач -->
+                <span
+                  v-else-if="isCurrentUser(m)"
+                  class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#FEF2F2] text-[#881337] border border-[#FECDD3]"
+                >
+                  {{ m.role_name || m.role }}
+                </span>
+
+                <!-- Інші учасники: тільки Admin може змінювати роль -->
+                <select
+                  v-else-if="authStore.role === 'Admin'"
+                  :value="m.role_name || m.role"
+                  @change="handleRoleChange(m, ($event.target as HTMLSelectElement).value)"
+                  class="bg-white border border-[#E7E5E4] hover:border-[#881337] text-[#1e293b] rounded-lg px-2 py-1 font-bold text-xs cursor-pointer shadow-2xs"
+                >
+                  <option value="Admin">Admin</option>
+                  <option value="Manager">Manager</option>
+                  <option value="Member">Member</option>
+                </select>
+
+                <!-- Відображення для Manager / Member без права зміни -->
+                <span
+                  v-else
+                  class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#FAF8F5] text-[#44403C] border border-[#E7E5E4]"
+                >
                   {{ m.role_name || m.role }}
                 </span>
               </td>
-              <td class="py-3 px-4 font-semibold text-[#059669]">Активний</td>
+              <td class="py-3 px-4 text-center font-semibold text-[#059669]">
+                Активний
+              </td>
+              <!-- Дії доступні ТІЛЬКИ Admin -->
+              <td v-if="authStore.role === 'Admin'" class="py-3 px-4 text-right">
+                <button
+                  v-if="!isOwner(m) && !isCurrentUser(m)"
+                  @click="removeMember(m)"
+                  title="Вилучити з команди"
+                  class="text-[#78716C] hover:text-[#DC2626] font-semibold text-xs p-1 cursor-pointer transition"
+                >
+                  🗑
+                </button>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -127,7 +221,8 @@ const copyLink = () => {
           <select v-model="inviteRole" class="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E7E5E4] rounded-lg text-xs">
             <option value="Member">Member (Співробітник)</option>
             <option value="Manager">Manager (Керівник)</option>
-            <option value="Admin">Admin (Адміністратор)</option>
+            <!-- Опція Admin доступна ТІЛЬКИ діючому Admin -->
+            <option v-if="authStore.role === 'Admin'" value="Admin">Admin (Адміністратор)</option>
           </select>
         </div>
 

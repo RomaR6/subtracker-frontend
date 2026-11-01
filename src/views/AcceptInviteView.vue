@@ -32,7 +32,7 @@ onMounted(async () => {
     await api.post("/workspaces/accept-invite", { invite_token: tokenQuery });
     isSuccess.value = true;
     statusMsg.value = "Вітаємо! Ви успішно приєдналися до команди робочого простору.";
-    setTimeout(() => router.push("/dashboard"), 1500);
+    setTimeout(() => router.push('/app/dashboard'), 1500);
   } catch (err: any) {
     statusMsg.value = err.response?.data?.detail || "Недійсний або прострочений цифровий токен.";
   }
@@ -50,7 +50,7 @@ onMounted(async () => {
 
       <button
         v-if="isSuccess"
-        @click="router.push('/dashboard')"
+        @click="router.push('/app/dashboard')"
         class="bg-[#881337] text-white px-6 py-2 rounded-lg text-xs font-bold hover:bg-[#9F1239] transition"
       >
         Перейти до робочого простору
