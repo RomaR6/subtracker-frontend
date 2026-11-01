@@ -1,17 +1,30 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
 import api from "../api/axios";
+import { useAuthStore } from "../stores/auth";
+
+const router = useRouter();
+const authStore = useAuthStore();
 
 const workspaces = ref<any[]>([]);
 const isLoading = ref(true);
 
 const fetchAdminWorkspaces = async () => {
+  if (authStore.user?.email !== "roman@novatech.com") {
+    router.push("/app/dashboard");
+    return;
+  }
+
   isLoading.value = true;
   try {
     const res = await api.get("/admin/workspaces");
     workspaces.value = res.data;
-  } catch (err) {
+  } catch (err: any) {
     console.error(err);
+    if (err.response?.status === 403) {
+      router.push("/app/dashboard");
+    }
   } finally {
     isLoading.value = false;
   }
@@ -22,13 +35,13 @@ onMounted(fetchAdminWorkspaces);
 
 <template>
   <div class="space-y-6 text-left">
-    <div class="flex justify-between items-end">
+    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
       <div>
-        <h1 class="text-2xl font-black text-[#7C3AED] tracking-tight">Панель Суперадміністратора: Організації</h1>
+        <h1 class="text-2xl font-black text-[#1e293b] tracking-tight">Панель Суперадміністратора: Організації</h1>
         <p class="text-xs text-[#78716C] mt-1">Глобальний моніторинг усіх зареєстрованих просторів платформи SubTracker B2B</p>
       </div>
 
-      <router-link to="/app/admin/audit-logs" class="text-xs font-bold text-[#7C3AED] hover:underline">
+      <router-link to="/app/admin/audit-logs" class="text-xs font-bold text-[#881337] hover:underline flex items-center gap-1">
         Перейти до журналу безпеки AuditLog →
       </router-link>
     </div>
@@ -52,7 +65,7 @@ onMounted(fetchAdminWorkspaces);
             <td class="py-3 px-4 text-[#78716C]">{{ ws.owner_email }}</td>
             <td class="py-3 px-4 text-center font-bold">{{ ws.members_count }}</td>
             <td class="py-3 px-4 text-center font-bold">{{ ws.subscriptions_count }}</td>
-            <td class="py-3 px-4 text-right font-black text-[#7C3AED]">
+            <td class="py-3 px-4 text-right font-black text-[#881337]">
               ₴{{ ws.monthly_spend_uah ? ws.monthly_spend_uah.toLocaleString('uk-UA') : '0' }}
             </td>
           </tr>

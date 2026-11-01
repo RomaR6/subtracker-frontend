@@ -201,12 +201,22 @@ const navLinks = computed(() => {
         </span>
       </router-link>
 
+      <!-- Суперадмін платформи: Організації -->
       <router-link
-        v-if="authStore.isSuperadmin"
+        v-if="authStore.user?.email === 'roman@novatech.com'"
         to="/app/admin/workspaces"
-        class="text-xs font-bold py-2 ml-auto text-[#7C3AED] hover:text-[#6D28D9] flex items-center gap-1 cursor-pointer"
+        class="text-xs font-bold py-1.5 px-3 ml-auto rounded-lg bg-[#FEF2F2] hover:bg-[#FEE2E2] text-[#881337] border border-[#FECDD3] flex items-center gap-1.5 transition cursor-pointer"
       >
-        <span>🛡 Адмін-панель</span>
+        <span>🛡 Платформа (Організації)</span>
+      </router-link>
+
+      <!-- Адміністратор поточного простору: Журнал аудиту -->
+      <router-link
+        v-else-if="authStore.role === 'Admin'"
+        to="/app/admin/audit-logs"
+        class="text-xs font-bold py-1.5 px-3 ml-auto rounded-lg bg-[#FEF2F2] hover:bg-[#FEE2E2] text-[#881337] border border-[#FECDD3] flex items-center gap-1.5 transition cursor-pointer"
+      >
+        <span>🛡 Журнал аудиту</span>
       </router-link>
     </nav>
 

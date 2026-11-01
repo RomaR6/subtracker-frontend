@@ -86,7 +86,7 @@ const router = createRouter({
           path: "admin/audit-logs",
           name: "admin-audit-logs",
           component: () => import("../views/AdminAuditLogsView.vue"),
-          meta: { superadminOnly: true }
+          meta: { adminOnly: true }
         }
       ]
     },
@@ -147,6 +147,10 @@ router.beforeEach(async (to) => {
   }
 
   if (to.meta.superadminOnly && !authStore.isSuperadmin) {
+    return { name: "dashboard" };
+  }
+
+  if (to.meta.adminOnly && authStore.role !== "Admin" && !authStore.isSuperadmin) {
     return { name: "dashboard" };
   }
 
