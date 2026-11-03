@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { useDialogStore } from "../stores/dialog";
 import { ref, computed, onMounted } from "vue";
 import api from "../api/axios";
@@ -20,6 +20,7 @@ const selectedStatus = ref("all");
 const showAddModal = ref(false);
 const showInvoiceModal = ref(false);
 const editingItem = ref<any | null>(null);
+const renewingId = ref<number | null>(null);
 
 const fetchSubscriptions = async () => {
   isLoading.value = true;
@@ -31,6 +32,29 @@ const fetchSubscriptions = async () => {
     console.error("Не вдалося завантажити підписки:", err);
   } finally {
     isLoading.value = false;
+  }
+};
+
+const markAsRenewed = async (sub: any) => {
+  renewingId.value = sub.id;
+  try {
+    const rawDate = sub.next_payment_date || sub.next_billing_date;
+    const currentDate = new Date(rawDate);
+    if (sub.billing_period === "yearly" || sub.billing_cycle === "yearly") {
+      currentDate.setFullYear(currentDate.getFullYear() + 1);
+    } else {
+      currentDate.setMonth(currentDate.getMonth() + 1);
+    }
+    const newDateStr = currentDate.toISOString().slice(0, 10);
+
+    await api.put(`/subscriptions/item/${sub.id}`, {
+      next_billing_date: newDateStr
+    });
+    await fetchSubscriptions();
+  } catch (err) {
+    console.error("Помилка пролонгації:", err);
+  } finally {
+    renewingId.value = null;
   }
 };
 
@@ -63,11 +87,8 @@ const openEditModal = (item: any) => {
 const toggleStatus = async (item: any) => {
   if (!authStore.isAdminOrManager) return;
   try {
-    const newStatus = item.status === "active" ? "inactive" : "active";
-    await api.patch(`/subscriptions/${item.id}/toggle-status`, null, {
-      params: { is_active: newStatus === "active" }
-    });
-    item.status = newStatus;
+    await api.patch(`/subscriptions/item/${item.id}/toggle-status`);
+    await fetchSubscriptions();
   } catch (err) {
     console.error("Не вдалося перемкнути статус:", err);
   }
@@ -76,14 +97,14 @@ const toggleStatus = async (item: any) => {
 const deleteSubscription = async (id: number) => {
   if (!authStore.isAdminOrManager) return;
   const confirmed = await dialog.confirm({
-    title: "Видалення корпоративної підписки",
-    message: "Ви дійсно бажаєте видалити цю підписку з реєстру? Цю дію неможливо скасувати.",
+    title: "Вилучення ліцензії",
+    message: "Ви дійсно бажаєте видалити цю підписку з реєстру компанії? Цю дію неможливо скасувати.",
     confirmText: "Видалити",
     cancelText: "Скасувати",
     isDanger: true
   });
   if (!confirmed) return;
-  
+
   try {
     await api.delete(`/subscriptions/item/${id}`);
     subscriptions.value = subscriptions.value.filter((s) => s.id !== id);
@@ -94,12 +115,12 @@ const deleteSubscription = async (id: number) => {
 
 const exportCsv = () => {
   const wsId = wsStore.currentWorkspace?.id || 1;
-  window.open(`http://127.0.0.1:8000/api/v1/analytics/export/csv?workspace_id=${wsId}`, "_blank");
+  window.open(`http://localhost:8000/api/v1/analytics/export/csv?workspace_id=${wsId}`, "_blank");
 };
 
 const exportPdf = () => {
   const wsId = wsStore.currentWorkspace?.id || 1;
-  window.open(`http://127.0.0.1:8000/api/v1/analytics/export/pdf?workspace_id=${wsId}`, "_blank");
+  window.open(`http://localhost:8000/api/v1/analytics/export/pdf?workspace_id=${wsId}`, "_blank");
 };
 </script>
 
@@ -160,9 +181,9 @@ const exportPdf = () => {
         <select v-model="selectedCategory" class="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E7E5E4] rounded-lg text-xs text-[#44403C]">
           <option value="all">Усі категорії</option>
           <option value="DevTools">DevTools</option>
-          <option value="Infrastructure">Infrastructure</option>
+          <option value="DevOps & Cloud">DevOps & Cloud</option>
           <option value="Design">Design</option>
-          <option value="Communication">Communication</option>
+          <option value="Комунікація">Комунікація</option>
         </select>
       </div>
 
@@ -211,7 +232,7 @@ const exportPdf = () => {
             </td>
 
             <td class="py-3 px-4 text-[#44403C] font-medium">{{ item.category }}</td>
-            <td class="py-3 px-4 text-[#44403C] font-medium">{{ item.owner_name || "Загальний" }}</td>
+            <td class="py-3 px-4 text-[#44403C] font-medium">{{ item.owner_name || "Загальний пул" }}</td>
             <td class="py-3 px-4 capitalize text-[#78716C]">{{ item.billing_period }}</td>
 
             <td class="py-3 px-4 text-right">
@@ -219,13 +240,37 @@ const exportPdf = () => {
               <p class="text-[10px] text-[#78716C]">₴{{ Math.round(item.cost_uah).toLocaleString('uk-UA') }}</p>
             </td>
 
-            <td class="py-3 px-4">
-              <p class="font-semibold text-[#1e293b]">{{ item.next_payment_date }}</p>
-              <p :class="item.days_until_payment < 0 ? 'text-[#DC2626] font-black' : (item.days_until_payment <= 3 ? 'text-[#DC2626] font-bold' : 'text-[#78716C]')" class="text-[10px]">
-                <span v-if="item.days_until_payment === 0">Сьогодні</span>
-                <span v-else-if="item.days_until_payment < 0">Прострочено на {{ Math.abs(item.days_until_payment) }} дн.</span>
-                <span v-else>Через {{ item.days_until_payment }} дн.</span>
-              </p>
+            <td class="py-3 px-4 font-mono">
+              <div class="flex items-center gap-2">
+                <div>
+                  <span class="block text-xs font-semibold text-[#1e293b]">{{ item.next_payment_date }}</span>
+                  <span
+                    v-if="item.days_until_payment < 0"
+                    class="text-[10px] text-[#DC2626] font-bold block"
+                  >
+                    Прострочено на {{ Math.abs(item.days_until_payment) }} дн.
+                  </span>
+                  <span
+                    v-else-if="item.days_until_payment <= 3"
+                    class="text-[10px] text-[#DC2626] font-bold block"
+                  >
+                    {{ item.days_until_payment === 0 ? "Сьогодні" : `Через ${item.days_until_payment} дн.` }}
+                  </span>
+                  <span v-else class="text-[10px] text-[#78716C] block">
+                    Через {{ item.days_until_payment }} дн.
+                  </span>
+                </div>
+
+                <button
+                  v-if="item.days_until_payment <= 0 && item.status === 'active'"
+                  @click="markAsRenewed(item)"
+                  :disabled="renewingId === item.id"
+                  title="Підтвердити оплату та продовжити період"
+                  class="px-2 py-0.5 bg-[#ECFDF5] hover:bg-[#D1FAE5] text-[#059669] border border-[#A7F3D0] rounded text-[10px] font-bold transition cursor-pointer shadow-2xs whitespace-nowrap"
+                >
+                  {{ renewingId === item.id ? "..." : "Оплачено ↻" }}
+                </button>
+              </div>
             </td>
 
             <td class="py-3 px-4 text-center">
@@ -267,17 +312,8 @@ const exportPdf = () => {
       </table>
     </div>
 
-    <div class="mt-4 flex items-center justify-between text-xs text-[#78716C] px-2">
-      <div>Показано <strong>{{ subscriptions.length }}</strong> із <strong>{{ subscriptions.length }}</strong> записів</div>
-      <div class="flex items-center gap-1">
-        <button disabled class="px-2.5 py-1 rounded-md border border-[#E7E5E4] bg-white opacity-50 cursor-not-allowed">← Попередня</button>
-        <span class="px-3 py-1 rounded-md bg-[#881337] text-white font-bold">1</span>
-        <button disabled class="px-2.5 py-1 rounded-md border border-[#E7E5E4] bg-white opacity-50 cursor-not-allowed">Наступна →</button>
-      </div>
-    </div>
-
+    <!-- Модальні вікна -->
     <SubscriptionModal
-      v-if="authStore.isAdminOrManager"
       :show="showAddModal"
       :edit-item="editingItem"
       :workspace-id="wsStore.currentWorkspace?.id || 1"
@@ -286,7 +322,6 @@ const exportPdf = () => {
     />
 
     <InvoiceUploadModal
-      v-if="authStore.isAdminOrManager"
       :show="showInvoiceModal"
       :workspace-id="wsStore.currentWorkspace?.id || 1"
       @close="showInvoiceModal = false"
