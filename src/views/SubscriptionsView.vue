@@ -38,18 +38,7 @@ const fetchSubscriptions = async () => {
 const markAsRenewed = async (sub: any) => {
   renewingId.value = sub.id;
   try {
-    const rawDate = sub.next_payment_date || sub.next_billing_date;
-    const currentDate = new Date(rawDate);
-    if (sub.billing_period === "yearly" || sub.billing_cycle === "yearly") {
-      currentDate.setFullYear(currentDate.getFullYear() + 1);
-    } else {
-      currentDate.setMonth(currentDate.getMonth() + 1);
-    }
-    const newDateStr = currentDate.toISOString().slice(0, 10);
-
-    await api.put(`/subscriptions/item/${sub.id}`, {
-      next_billing_date: newDateStr
-    });
+    await api.post(`/subscriptions/item/${sub.id}/renew`);
     await fetchSubscriptions();
   } catch (err) {
     console.error("Помилка пролонгації:", err);
@@ -312,7 +301,6 @@ const exportPdf = () => {
       </table>
     </div>
 
-    <!-- Модальні вікна -->
     <SubscriptionModal
       :show="showAddModal"
       :edit-item="editingItem"
