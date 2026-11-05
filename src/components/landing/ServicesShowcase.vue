@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { IconApps, IconCheck } from "@tabler/icons-vue";
 import { useWorkspaceStore } from "../../stores/workspace";
 
 const wsStore = useWorkspaceStore();
@@ -20,7 +21,8 @@ const services = [
 <template>
   <section id="services" class="py-16 bg-white border-y border-[#E7E5E4]">
     <div class="max-w-[1240px] mx-auto px-6 text-center">
-      <div class="inline-flex items-center gap-2 px-3 py-1 bg-[#FEF2F2] border border-[#FECDD3] rounded-full text-xs font-bold text-[#881337] mb-3">
+      <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-[#FEF2F2] border border-[#FECDD3] rounded-full text-xs font-bold text-[#881337] mb-3">
+        <IconApps class="w-3.5 h-3.5" :stroke-width="2.2" />
         <span>Каталог інтеграцій</span>
       </div>
       <h2 class="text-3xl font-black text-[#1e293b] tracking-tight">
@@ -40,8 +42,9 @@ const services = [
             <div class="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-white text-xs shadow-xs" :style="{ backgroundColor: item.logoBg }">
               {{ item.abbr }}
             </div>
-            <span class="text-[10px] font-bold text-[#059669] bg-[#ECFDF5] px-2 py-0.5 rounded-full border border-[#A7F3D0]">
-              Синхронізовано
+            <span class="text-[10px] font-bold text-[#059669] bg-[#ECFDF5] px-2 py-0.5 rounded-full border border-[#A7F3D0] inline-flex items-center gap-1">
+              <IconCheck class="w-3 h-3" :stroke-width="2.5" />
+              <span>Синхронізовано</span>
             </span>
           </div>
           <h4 class="font-bold text-sm text-[#1e293b] group-hover:text-[#881337] transition">

@@ -1,6 +1,12 @@
 ﻿<script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import {
+  IconChevronDown,
+  IconPlus,
+  IconRefresh,
+  IconShieldCheck
+} from "@tabler/icons-vue";
 import subtrackLogo from "../assets/subtrack_logo.jpg";
 import api from "../api/axios";
 import { useAuthStore } from "../stores/auth";
@@ -46,7 +52,7 @@ const syncNbuRates = async () => {
   try {
     const res = await api.post("/currencies/sync");
     await wsStore.fetchRates();
-    syncFeedback.value = `✓ $1 = ${res.data?.rates?.USD || wsStore.usdRate} ₴`;
+    syncFeedback.value = `$1 = ${res.data?.rates?.USD || wsStore.usdRate} ₴`;
     setTimeout(() => { syncFeedback.value = ""; }, 2500);
   } catch (err) {
     syncFeedback.value = "Помилка НБУ";
@@ -78,7 +84,6 @@ const createWorkspace = async () => {
   }
 };
 
-// RBAC: динамічне формування пунктів меню залежно від ролі користувача
 const navLinks = computed(() => {
   const isMember = authStore.role === "Member";
 
@@ -119,7 +124,7 @@ const navLinks = computed(() => {
           >
             <span>{{ wsStore.currentWorkspace?.name || "NovaTech IT Core" }}</span>
             <span class="text-[#78716C] bg-white px-1.5 py-0.5 rounded text-[10px] border border-[#E7E5E4]">₴ UAH</span>
-            <span class="text-[10px] text-[#78716C]">▼</span>
+            <IconChevronDown class="w-3.5 h-3.5 text-[#78716C]" :stroke-width="2.2" />
           </button>
 
           <div
@@ -139,9 +144,10 @@ const navLinks = computed(() => {
             <div class="h-px bg-[#E7E5E4] my-1"></div>
             <button
               @click="showWsDropdown = false; showNewWsModal = true; wsCreateError = ''"
-              class="w-full text-left px-2.5 py-1.5 text-[#881337] font-bold hover:bg-[#FEF2F2] rounded-lg transition cursor-pointer"
+              class="w-full text-left px-2.5 py-1.5 text-[#881337] font-bold hover:bg-[#FEF2F2] rounded-lg transition cursor-pointer flex items-center gap-1"
             >
-              + Створити новий простір
+              <IconPlus class="w-3.5 h-3.5" :stroke-width="2.5" />
+              <span>Створити новий простір</span>
             </button>
           </div>
         </div>
@@ -155,7 +161,7 @@ const navLinks = computed(() => {
           title="Оновити котирування через API НБУ"
         >
           <span>НБУ: $1 = {{ wsStore.usdRate.toFixed(2) }} ₴</span>
-          <span :class="isSyncing ? 'animate-spin' : ''">🔄</span>
+          <IconRefresh class="w-3.5 h-3.5" :class="isSyncing ? 'animate-spin' : ''" :stroke-width="2.2" />
         </button>
         <span v-if="syncFeedback" class="text-[11px] font-bold text-[#059669]">{{ syncFeedback }}</span>
 
@@ -164,7 +170,8 @@ const navLinks = computed(() => {
           @click="router.push('/app/subscriptions')"
           class="bg-[#881337] hover:bg-[#9F1239] text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
         >
-          <span>+ Додати підписку</span>
+          <IconPlus class="w-4 h-4" :stroke-width="2.5" />
+          <span>Додати підписку</span>
         </button>
 
         <router-link
@@ -192,7 +199,6 @@ const navLinks = computed(() => {
         :class="route.path === link.route ? 'text-[#881337] font-bold border-b-2 border-[#881337]' : 'text-[#78716C] hover:text-[#1e293b]'"
       >
         <span>{{ link.name }}</span>
-        <!-- Бейдж активних заявок на розгляді -->
         <span
           v-if="link.hasBadge && pendingRequestsCount > 0"
           class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-black bg-[#881337] text-white shadow-xs"
@@ -201,22 +207,22 @@ const navLinks = computed(() => {
         </span>
       </router-link>
 
-      <!-- Суперадмін платформи: Організації -->
       <router-link
         v-if="authStore.user?.email === 'roman@novatech.com'"
         to="/app/admin/workspaces"
         class="text-xs font-bold py-1.5 px-3 ml-auto rounded-lg bg-[#FEF2F2] hover:bg-[#FEE2E2] text-[#881337] border border-[#FECDD3] flex items-center gap-1.5 transition cursor-pointer"
       >
-        <span>🛡 Платформа (Організації)</span>
+        <IconShieldCheck class="w-4 h-4" :stroke-width="2" />
+        <span>Платформа (Організації)</span>
       </router-link>
 
-      <!-- Адміністратор поточного простору: Журнал аудиту -->
       <router-link
         v-else-if="authStore.role === 'Admin'"
         to="/app/admin/audit-logs"
         class="text-xs font-bold py-1.5 px-3 ml-auto rounded-lg bg-[#FEF2F2] hover:bg-[#FEE2E2] text-[#881337] border border-[#FECDD3] flex items-center gap-1.5 transition cursor-pointer"
       >
-        <span>🛡 Журнал аудиту</span>
+        <IconShieldCheck class="w-4 h-4" :stroke-width="2" />
+        <span>Журнал аудиту</span>
       </router-link>
     </nav>
 

@@ -16,7 +16,6 @@ const form = ref({
   workspace_name: "Моя IT-Команда"
 });
 
-
 declare const google: any;
 
 const parseJwt = (token: string) => {
@@ -50,7 +49,6 @@ const handleGoogleAuth = () => {
       if (tokenResponse && tokenResponse.access_token) {
         authStore.isLoading = true;
         try {
-          // Отримуємо реальні дані обраного Google-профілю
           const gProfileRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
             headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
           });
@@ -87,7 +85,6 @@ const handleGoogleAuth = () => {
 
   client.requestAccessToken();
 };
-
 
 const handleRegister = async () => {
   const ok = await authStore.register(form.value);

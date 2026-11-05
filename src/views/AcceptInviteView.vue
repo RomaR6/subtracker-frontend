@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { IconMailOpened } from "@tabler/icons-vue";
 import api from "../api/axios";
 import { useAuthStore } from "../stores/auth";
 
@@ -42,8 +43,8 @@ onMounted(async () => {
 <template>
   <div class="min-h-screen bg-[#FAF8F5] flex items-center justify-center p-4">
     <div class="bg-white border border-[#E7E5E4] rounded-2xl p-8 max-w-md w-full shadow-sm text-center">
-      <div class="w-12 h-12 bg-[#FEF3C7] text-[#92400E] rounded-full flex items-center justify-center mx-auto mb-4 text-xl">
-        ✉️
+      <div class="w-12 h-12 bg-[#FEF3C7] text-[#92400E] rounded-full flex items-center justify-center mx-auto mb-4">
+        <IconMailOpened class="w-6 h-6" :stroke-width="2" />
       </div>
       <h2 class="text-xl font-bold text-[#1e293b] mb-2">Запрошення до команди</h2>
       <p class="text-sm text-[#78716C] mb-6">{{ statusMsg }}</p>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from "vue";
+import { IconTrendingUp, IconArrowRight } from "@tabler/icons-vue";
 import api from "../../api/axios";
 
 const teamSize = ref(35);
@@ -32,7 +33,6 @@ const calculateSavings = async () => {
     });
     calculationResult.value = res.data;
   } catch (err) {
-    // Автономний резервний розрахунок при відсутності мережі
     const rate = 41.52;
     const spend = monthlySpendUsd.value;
     const m_save = Math.round(spend * 0.265 * 100) / 100;
@@ -68,7 +68,8 @@ watch([teamSize, subscriptionsCount, monthlySpendUsd], () => {
   <section id="roi-calculator" class="py-20 bg-[#FAF8F5]">
     <div class="max-w-[1240px] mx-auto px-6">
       <div class="text-center max-w-2xl mx-auto mb-12">
-        <div class="inline-flex items-center gap-2 px-3 py-1 bg-[#FEF3C7] border border-[#FDE68A] rounded-full text-xs font-bold text-[#92400E] mb-3">
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-[#FEF3C7] border border-[#FDE68A] rounded-full text-xs font-bold text-[#92400E] mb-3">
+          <IconTrendingUp class="w-3.5 h-3.5" :stroke-width="2.2" />
           <span>Економічний ефект</span>
         </div>
         <h2 class="text-3xl font-black text-[#1e293b] tracking-tight">
@@ -80,7 +81,6 @@ watch([teamSize, subscriptionsCount, monthlySpendUsd], () => {
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        <!-- Sliders Box -->
         <div class="lg:col-span-6 bg-white border border-[#E7E5E4] rounded-2xl p-6 sm:p-8 shadow-xs text-left space-y-6">
           <div>
             <div class="flex justify-between items-center mb-2">
@@ -156,7 +156,6 @@ watch([teamSize, subscriptionsCount, monthlySpendUsd], () => {
           </div>
         </div>
 
-        <!-- Real-time Output Metric Cards -->
         <div class="lg:col-span-6 bg-gradient-to-br from-[#881337] to-[#4C0519] text-white rounded-2xl p-6 sm:p-8 shadow-xl text-left flex flex-col justify-between">
           <div>
             <span class="text-[11px] font-bold uppercase tracking-wider text-rose-200">
@@ -194,7 +193,6 @@ watch([teamSize, subscriptionsCount, monthlySpendUsd], () => {
               </div>
             </div>
 
-            <!-- Detailed breakdown list -->
             <div class="mt-6 space-y-2 text-xs">
               <div class="flex justify-between items-center text-rose-100">
                 <span>• Відмова від незадіяних робочих місць (seats):</span>
@@ -221,9 +219,10 @@ watch([teamSize, subscriptionsCount, monthlySpendUsd], () => {
             </span>
             <router-link
               to="/register"
-              class="w-full sm:w-auto text-center px-5 py-2.5 bg-white text-[#881337] rounded-lg text-xs font-black shadow-md hover:bg-rose-50 transition active:scale-95"
+              class="w-full sm:w-auto text-center px-5 py-2.5 bg-white text-[#881337] rounded-lg text-xs font-black shadow-md hover:bg-rose-50 transition active:scale-95 inline-flex items-center justify-center gap-1.5"
             >
-              Спробувати безкоштовно
+              <span>Спробувати безкоштовно</span>
+              <IconArrowRight class="w-3.5 h-3.5" :stroke-width="2.5" />
             </router-link>
           </div>
         </div>

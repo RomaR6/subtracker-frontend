@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { IconBrandTelegram, IconCheck, IconRefresh, IconArrowRight } from "@tabler/icons-vue";
 import api from "../../api/axios";
 
 interface UpcomingItem {
@@ -79,9 +80,18 @@ const sendSingleTelegramAlert = async (item: UpcomingItem) => {
           :disabled="sendingId === item.id"
           class="text-[10px] font-bold text-[#881337] hover:text-[#9F1239] transition mt-0.5 flex items-center gap-1 ml-auto cursor-pointer disabled:opacity-50"
         >
-          <span v-if="sendingId === item.id" class="animate-spin text-xs">🔄</span>
-          <span v-else-if="successMap[item.id]" class="text-[#059669]">Надіслано ✓</span>
-          <span v-else>Нагадати в TG ➔</span>
+          <span v-if="sendingId === item.id" class="inline-flex items-center gap-1">
+            <IconRefresh class="w-3 h-3 animate-spin" :stroke-width="2.2" />
+          </span>
+          <span v-else-if="successMap[item.id]" class="text-[#059669] inline-flex items-center gap-1">
+            <span>Надіслано</span>
+            <IconCheck class="w-3 h-3" :stroke-width="2.5" />
+          </span>
+          <span v-else class="inline-flex items-center gap-1">
+            <IconBrandTelegram class="w-3 h-3 text-[#0284c7]" :stroke-width="2" />
+            <span>Нагадати в TG</span>
+            <IconArrowRight class="w-2.5 h-2.5" :stroke-width="2.5" />
+          </span>
         </button>
       </div>
     </div>

@@ -1,6 +1,7 @@
 ﻿<script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
+import { IconArrowRight } from "@tabler/icons-vue";
 import api from "../api/axios";
 import { useAuthStore } from "../stores/auth";
 
@@ -42,7 +43,8 @@ onMounted(fetchAdminWorkspaces);
       </div>
 
       <router-link to="/app/admin/audit-logs" class="text-xs font-bold text-[#881337] hover:underline flex items-center gap-1">
-        Перейти до журналу безпеки AuditLog →
+        <span>Перейти до журналу безпеки AuditLog</span>
+        <IconArrowRight class="w-3.5 h-3.5" :stroke-width="2.5" />
       </router-link>
     </div>
 

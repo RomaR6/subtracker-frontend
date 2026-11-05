@@ -1,5 +1,6 @@
 ﻿<script setup lang="ts">
 import { ref, onMounted } from "vue";
+import { IconPlus, IconX, IconCheck } from "@tabler/icons-vue";
 import api from "../api/axios";
 import { useAuthStore } from "../stores/auth";
 import { useWorkspaceStore } from "../stores/workspace";
@@ -103,7 +104,8 @@ const handleReview = async (decision: "Approved" | "Rejected") => {
         @click="showCreateModal = true"
         class="px-4 py-2 bg-[#881337] hover:bg-[#9F1239] text-white rounded-lg text-xs font-bold shadow-xs transition flex items-center gap-1.5 cursor-pointer"
       >
-        <span>+ Подати заявку на софт</span>
+        <IconPlus class="w-4 h-4" :stroke-width="2.5" />
+        <span>Подати заявку на софт</span>
       </button>
     </div>
 
@@ -190,7 +192,9 @@ const handleReview = async (decision: "Approved" | "Rejected") => {
       <div class="bg-white border border-[#E7E5E4] rounded-2xl max-w-sm w-full p-6 shadow-xl text-left">
         <div class="flex justify-between items-center">
           <h3 class="font-bold text-base text-[#1e293b]">Розгляд: {{ reviewModalItem.software_name || reviewModalItem.service_name }}</h3>
-          <button @click="reviewModalItem = null" class="text-[#78716C] p-1 text-sm cursor-pointer">✕</button>
+          <button @click="reviewModalItem = null" class="text-[#78716C] hover:text-[#1e293b] p-1 cursor-pointer">
+            <IconX class="w-4 h-4" :stroke-width="2.2" />
+          </button>
         </div>
         <p class="text-xs text-[#78716C] mt-1">Орієнтовна вартість: ${{ reviewModalItem.estimated_cost }}</p>
 
@@ -215,9 +219,10 @@ const handleReview = async (decision: "Approved" | "Rejected") => {
           <button
             @click="handleReview('Approved')"
             :disabled="isReviewing"
-            class="flex-1 py-2 bg-[#059669] hover:bg-[#047857] text-white font-bold rounded-lg text-xs cursor-pointer disabled:opacity-50"
+            class="flex-1 py-2 bg-[#059669] hover:bg-[#047857] text-white font-bold rounded-lg text-xs cursor-pointer disabled:opacity-50 inline-flex items-center justify-center gap-1"
           >
-            {{ isReviewing ? "Обробка..." : "Схвалити ✓" }}
+            <span>{{ isReviewing ? "Обробка..." : "Схвалити" }}</span>
+            <IconCheck v-if="!isReviewing" class="w-3.5 h-3.5" :stroke-width="2.5" />
           </button>
         </div>
       </div>

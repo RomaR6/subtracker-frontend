@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
+import { IconRocket, IconCheck, IconArrowRight } from "@tabler/icons-vue";
 import subtrackLogo from "../assets/subtrack_logo.jpg";
 
 import awsIcon from "../assets/integrations/aws.svg";
@@ -90,7 +91,6 @@ const integrations = [
 
 <template>
   <div class="min-h-screen bg-[#FAF8F5] text-[#1e293b]">
-    <!-- Головний екран -->
     <section class="max-w-7xl mx-auto px-6 pt-12 pb-16 text-center md:text-left grid grid-cols-1 md:grid-cols-12 gap-10 items-center">
       <div class="md:col-span-7 space-y-6">
         <div class="flex items-center gap-3 justify-center md:justify-start">
@@ -107,8 +107,9 @@ const integrations = [
           </div>
         </div>
 
-        <span class="inline-block bg-[#FEF2F2] border border-[#FECDD3] text-[#881337] px-3.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider">
-          🚀 Вільний інструмент оптимізації IT-бюджету
+        <span class="inline-flex items-center gap-1.5 bg-[#FEF2F2] border border-[#FECDD3] text-[#881337] px-3.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider">
+          <IconRocket class="w-3.5 h-3.5" :stroke-width="2.2" />
+          <span>Вільний інструмент оптимізації IT-бюджету</span>
         </span>
 
         <h1 class="text-3xl md:text-5xl font-black text-[#1e293b] leading-tight">
@@ -140,32 +141,32 @@ const integrations = [
         
         <ul class="space-y-3 text-xs text-[#44403C]">
           <li class="flex items-start gap-2.5">
-            <span class="text-[#059669] font-black">✓</span>
+            <IconCheck class="w-4 h-4 text-[#059669] shrink-0 mt-0.5" :stroke-width="2.5" />
             <span><strong>Єдиний реєстр підписок:</strong> облік тарифів, дат списань та відповідальних менеджерів.</span>
           </li>
           <li class="flex items-start gap-2.5">
-            <span class="text-[#059669] font-black">✓</span>
+            <IconCheck class="w-4 h-4 text-[#059669] shrink-0 mt-0.5" :stroke-width="2.5" />
             <span><strong>Календар автопролонгацій:</strong> завчасні нагадування перед плановими платежами.</span>
           </li>
           <li class="flex items-start gap-2.5">
-            <span class="text-[#059669] font-black">✓</span>
+            <IconCheck class="w-4 h-4 text-[#059669] shrink-0 mt-0.5" :stroke-width="2.5" />
             <span><strong>Конвертер валют:</strong> пряма синхронізація з щоденним курсом НБУ.</span>
           </li>
           <li class="flex items-start gap-2.5">
-            <span class="text-[#059669] font-black">✓</span>
+            <IconCheck class="w-4 h-4 text-[#059669] shrink-0 mt-0.5" :stroke-width="2.5" />
             <span><strong>Центр погоджень:</strong> заявки співробітників на закупівлю ПЗ із контролем статусів.</span>
           </li>
         </ul>
 
         <div class="pt-3 border-t border-[#E7E5E4]">
-          <router-link to="/register" class="text-xs font-bold text-[#881337] hover:underline block text-center">
-            Розпочати роботу з компанією →
+          <router-link to="/register" class="text-xs font-bold text-[#881337] hover:underline flex items-center justify-center gap-1">
+            <span>Розпочати роботу з компанією</span>
+            <IconArrowRight class="w-3.5 h-3.5" :stroke-width="2.5" />
           </router-link>
         </div>
       </div>
     </section>
 
-    <!-- Каталог інтеграцій -->
     <section class="bg-white border-y border-[#E7E5E4] py-14">
       <div class="max-w-7xl mx-auto px-6">
         <div class="text-center max-w-2xl mx-auto mb-10">
@@ -207,7 +208,6 @@ const integrations = [
       </div>
     </section>
 
-    <!-- Інтерактивний ROI Калькулятор -->
     <section class="max-w-7xl mx-auto px-6 py-16">
       <div class="bg-white border border-[#E7E5E4] rounded-2xl p-6 md:p-12 shadow-xs grid grid-cols-1 md:grid-cols-12 gap-8 text-left">
         <div class="md:col-span-6 space-y-5">
@@ -286,7 +286,6 @@ const integrations = [
       </div>
     </section>
 
-    <!-- Підвал -->
     <footer class="bg-white border-t border-[#E7E5E4] py-10 text-xs text-[#78716C]">
       <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
         <div class="flex items-center gap-3">

@@ -1,6 +1,15 @@
 <script setup lang="ts">
 import { useDialogStore } from "../stores/dialog";
 import { ref, computed, onMounted } from "vue";
+import {
+  IconFileSpreadsheet,
+  IconFileTypePdf,
+  IconFileImport,
+  IconPlus,
+  IconRefresh,
+  IconEdit,
+  IconTrash
+} from "@tabler/icons-vue";
 import api from "../api/axios";
 import { useAuthStore } from "../stores/auth";
 import { useWorkspaceStore } from "../stores/workspace";
@@ -127,7 +136,8 @@ const exportPdf = () => {
           @click="exportCsv"
           class="px-3.5 py-2 bg-white hover:bg-[#F5F5F4] text-[#1e293b] border border-[#E7E5E4] rounded-lg text-xs font-bold shadow-xs transition flex items-center gap-1.5 cursor-pointer"
         >
-          <span>📥 Експорт CSV</span>
+          <IconFileSpreadsheet class="w-4 h-4 text-[#059669]" :stroke-width="2" />
+          <span>Експорт CSV</span>
         </button>
 
         <button
@@ -135,7 +145,8 @@ const exportPdf = () => {
           @click="exportPdf"
           class="px-3.5 py-2 bg-white hover:bg-[#F5F5F4] text-[#1e293b] border border-[#E7E5E4] rounded-lg text-xs font-bold shadow-xs transition flex items-center gap-1.5 cursor-pointer"
         >
-          <span>📄 Експорт PDF</span>
+          <IconFileTypePdf class="w-4 h-4 text-[#881337]" :stroke-width="2" />
+          <span>Експорт PDF</span>
         </button>
 
         <button
@@ -143,7 +154,8 @@ const exportPdf = () => {
           @click="showInvoiceModal = true"
           class="px-3.5 py-2 bg-white hover:bg-[#F5F5F4] text-[#881337] border border-[#FECDD3] rounded-lg text-xs font-bold shadow-xs transition flex items-center gap-1.5 cursor-pointer"
         >
-          <span>📑 Імпорт PDF-інвойсу</span>
+          <IconFileImport class="w-4 h-4" :stroke-width="2" />
+          <span>Імпорт PDF-інвойсу</span>
         </button>
 
         <button
@@ -151,7 +163,8 @@ const exportPdf = () => {
           @click="editingItem = null; showAddModal = true"
           class="px-4 py-2 bg-[#881337] hover:bg-[#9F1239] text-white rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5 cursor-pointer active:scale-95"
         >
-          <span>+ Додати ліцензію</span>
+          <IconPlus class="w-4 h-4" :stroke-width="2.5" />
+          <span>Додати ліцензію</span>
         </button>
       </div>
     </div>
@@ -255,9 +268,10 @@ const exportPdf = () => {
                   @click="markAsRenewed(item)"
                   :disabled="renewingId === item.id"
                   title="Підтвердити оплату та продовжити період"
-                  class="px-2 py-0.5 bg-[#ECFDF5] hover:bg-[#D1FAE5] text-[#059669] border border-[#A7F3D0] rounded text-[10px] font-bold transition cursor-pointer shadow-2xs whitespace-nowrap"
+                  class="px-2 py-0.5 bg-[#ECFDF5] hover:bg-[#D1FAE5] text-[#059669] border border-[#A7F3D0] rounded text-[10px] font-bold transition cursor-pointer shadow-2xs whitespace-nowrap inline-flex items-center gap-1"
                 >
-                  {{ renewingId === item.id ? "..." : "Оплачено ↻" }}
+                  <span>{{ renewingId === item.id ? "..." : "Оплачено" }}</span>
+                  <IconRefresh v-if="renewingId !== item.id" class="w-3 h-3" :stroke-width="2.5" />
                 </button>
               </div>
             </td>
@@ -282,11 +296,11 @@ const exportPdf = () => {
 
             <td v-if="authStore.isAdminOrManager" class="py-3 px-4 text-right">
               <div class="flex items-center justify-end gap-2">
-                <button @click="openEditModal(item)" class="text-[#78716C] hover:text-[#881337] font-semibold text-xs p-1 cursor-pointer" title="Редагувати">
-                  ✏️
+                <button @click="openEditModal(item)" class="text-[#78716C] hover:text-[#881337] font-semibold text-xs p-1 cursor-pointer transition" title="Редагувати">
+                  <IconEdit class="w-4 h-4" :stroke-width="2" />
                 </button>
-                <button @click="deleteSubscription(item.id)" class="text-[#78716C] hover:text-[#DC2626] font-semibold text-xs p-1 cursor-pointer" title="Видалити">
-                  🗑
+                <button @click="deleteSubscription(item.id)" class="text-[#78716C] hover:text-[#DC2626] font-semibold text-xs p-1 cursor-pointer transition" title="Видалити">
+                  <IconTrash class="w-4 h-4" :stroke-width="2" />
                 </button>
               </div>
             </td>

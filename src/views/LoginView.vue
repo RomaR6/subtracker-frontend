@@ -2,6 +2,7 @@
 import subtrackLogo from "../assets/subtrack_logo.jpg";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
+import { IconEye, IconEyeOff, IconX, IconCheck } from "@tabler/icons-vue";
 import api from "../api/axios";
 import { useAuthStore } from "../stores/auth";
 import { verifyTotpToken } from "../utils/totp";
@@ -23,7 +24,6 @@ const forgotEmail = ref("");
 const forgotSent = ref(false);
 const isSendingReset = ref(false);
 const forgotError = ref("");
-
 
 declare const google: any;
 
@@ -58,7 +58,6 @@ const handleGoogleAuth = () => {
       if (tokenResponse && tokenResponse.access_token) {
         authStore.isLoading = true;
         try {
-          // Отримуємо реальні дані обраного Google-профілю
           const gProfileRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
             headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
           });
@@ -95,7 +94,6 @@ const handleGoogleAuth = () => {
 
   client.requestAccessToken();
 };
-
 
 const handleLogin = async () => {
   authStore.errorMessage = "";
@@ -224,13 +222,8 @@ const quickFill = (userEmail: string) => {
               class="absolute right-3 top-1/2 -translate-y-1/2 text-[#78716C] hover:text-[#1e293b] p-1 cursor-pointer transition select-none"
               :title="showPassword ? 'Приховати пароль' : 'Показати пароль'"
             >
-              <svg v-if="!showPassword" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
-              <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
-              </svg>
+              <IconEye v-if="!showPassword" class="w-4 h-4" :stroke-width="2" />
+              <IconEyeOff v-else class="w-4 h-4" :stroke-width="2" />
             </button>
           </div>
         </div>
@@ -292,12 +285,13 @@ const quickFill = (userEmail: string) => {
       </p>
     </div>
 
-    <!-- Модалка Забули пароль -->
     <div v-if="showForgotModal" class="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
       <div class="bg-white border border-[#E7E5E4] rounded-2xl p-6 max-w-sm w-full shadow-xl text-left">
         <div class="flex justify-between items-center mb-3">
           <h3 class="font-bold text-base text-[#1e293b]">Відновлення пароля</h3>
-          <button @click="showForgotModal = false" class="text-[#78716C] hover:text-[#1e293b] text-sm p-1 cursor-pointer">✕</button>
+          <button @click="showForgotModal = false" class="text-[#78716C] hover:text-[#1e293b] p-1 cursor-pointer">
+            <IconX class="w-4 h-4" :stroke-width="2.2" />
+          </button>
         </div>
 
         <div v-if="!forgotSent" class="space-y-3.5 text-xs">
@@ -340,8 +334,8 @@ const quickFill = (userEmail: string) => {
         </div>
 
         <div v-else class="space-y-3.5 text-xs text-center py-2">
-          <div class="w-10 h-10 bg-[#ECFDF5] text-[#059669] rounded-full flex items-center justify-center mx-auto text-lg font-black border border-[#A7F3D0]">
-            ✓
+          <div class="w-10 h-10 bg-[#ECFDF5] text-[#059669] rounded-full flex items-center justify-center mx-auto border border-[#A7F3D0]">
+            <IconCheck class="w-5 h-5" :stroke-width="2.5" />
           </div>
           <p class="font-bold text-sm text-[#1e293b]">Запит успішно оброблено!</p>
           <p class="text-[#78716C]">
@@ -358,7 +352,6 @@ const quickFill = (userEmail: string) => {
       </div>
     </div>
 
-    <!-- Модалка 2FA з підтримкою Enter -->
     <div v-if="show2FaModal" class="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
       <div class="bg-white border border-[#E7E5E4] rounded-2xl p-6 max-w-sm w-full shadow-xl text-center">
         <h3 class="font-bold text-lg text-[#1e293b]">Двоетапна авторизація 2FA</h3>

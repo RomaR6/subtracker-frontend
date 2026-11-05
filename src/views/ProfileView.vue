@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue";
 import QRCode from "qrcode";
+import { IconCheck, IconShieldCheck, IconCopy } from "@tabler/icons-vue";
 import api from "../api/axios";
 import { useAuthStore } from "../stores/auth";
 import { useWorkspaceStore } from "../stores/workspace";
@@ -108,7 +109,6 @@ const start2FaSetup = async () => {
   try {
     await api.post("/auth/2fa/setup");
   } catch (err) {
-    // Демо-фолбек
   } finally {
     showSetupPanel.value = true;
     isLoading.value = false;
@@ -167,7 +167,6 @@ const verify2FaCode = async () => {
     try {
       await api.post("/auth/2fa/verify", { code: totpCode.value.trim() });
     } catch (e) {
-      // Клієнтська валідація RFC 6238
     }
 
     const prefix = getStorageKeyPrefix();
@@ -200,7 +199,6 @@ const verify2FaCode = async () => {
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-      <!-- Ліва колонка: Профіль та простори -->
       <div class="lg:col-span-5 bg-white border border-[#E7E5E4] rounded-2xl p-6 shadow-xs space-y-5">
         <div class="flex items-center gap-4">
           <div class="w-14 h-14 rounded-2xl bg-[#881337] text-white flex items-center justify-center font-black text-xl shadow-xs">
@@ -237,19 +235,43 @@ const verify2FaCode = async () => {
 
           <div class="p-3.5 bg-[#FAF8F5] rounded-xl border border-[#E7E5E4]">
             <p class="font-bold text-[#1e293b] mb-2">Доступні повноваження в поточному просторі:</p>
-            <ul v-if="authStore.role === 'Admin'" class="space-y-1 text-[#44403C]">
-              <li>✓ Повне керування підписками та PDF-інвойсами</li>
-              <li>✓ Розгляд і затвердження заявок співробітників</li>
-              <li>✓ Генерація інвайт-посилань та налаштування вебхуків</li>
+            <ul v-if="authStore.role === 'Admin'" class="space-y-1.5 text-[#44403C]">
+              <li class="flex items-center gap-1.5">
+                <IconCheck class="w-3.5 h-3.5 text-[#059669] shrink-0" :stroke-width="2.5" />
+                <span>Повне керування підписками та PDF-інвойсами</span>
+              </li>
+              <li class="flex items-center gap-1.5">
+                <IconCheck class="w-3.5 h-3.5 text-[#059669] shrink-0" :stroke-width="2.5" />
+                <span>Розгляд і затвердження заявок співробітників</span>
+              </li>
+              <li class="flex items-center gap-1.5">
+                <IconCheck class="w-3.5 h-3.5 text-[#059669] shrink-0" :stroke-width="2.5" />
+                <span>Генерація інвайт-посилань та налаштування вебхуків</span>
+              </li>
             </ul>
-            <ul v-else-if="authStore.role === 'Manager'" class="space-y-1 text-[#44403C]">
-              <li>✓ Додавання та редагування корпоративних підписок</li>
-              <li>✓ Схвалення та відхилення заявок на закупівлю ПЗ</li>
-              <li>✓ Перегляд фінансової аналітики та експорт звітів</li>
+            <ul v-else-if="authStore.role === 'Manager'" class="space-y-1.5 text-[#44403C]">
+              <li class="flex items-center gap-1.5">
+                <IconCheck class="w-3.5 h-3.5 text-[#059669] shrink-0" :stroke-width="2.5" />
+                <span>Додавання та редагування корпоративних підписок</span>
+              </li>
+              <li class="flex items-center gap-1.5">
+                <IconCheck class="w-3.5 h-3.5 text-[#059669] shrink-0" :stroke-width="2.5" />
+                <span>Схвалення та відхилення заявок на закупівлю ПЗ</span>
+              </li>
+              <li class="flex items-center gap-1.5">
+                <IconCheck class="w-3.5 h-3.5 text-[#059669] shrink-0" :stroke-width="2.5" />
+                <span>Перегляд фінансової аналітики та експорт звітів</span>
+              </li>
             </ul>
-            <ul v-else class="space-y-1 text-[#44403C]">
-              <li>✓ Перегляд каталогу активних підписок команди</li>
-              <li>✓ Подання власних заявок на закупівлю ліцензій</li>
+            <ul v-else class="space-y-1.5 text-[#44403C]">
+              <li class="flex items-center gap-1.5">
+                <IconCheck class="w-3.5 h-3.5 text-[#059669] shrink-0" :stroke-width="2.5" />
+                <span>Перегляд каталогу активних підписок команди</span>
+              </li>
+              <li class="flex items-center gap-1.5">
+                <IconCheck class="w-3.5 h-3.5 text-[#059669] shrink-0" :stroke-width="2.5" />
+                <span>Подання власних заявок на закупівлю ліцензій</span>
+              </li>
             </ul>
           </div>
         </div>
@@ -273,7 +295,6 @@ const verify2FaCode = async () => {
         </div>
       </div>
 
-      <!-- Права колонка: 2FA з QR-кодом -->
       <div class="lg:col-span-7 bg-white border border-[#E7E5E4] rounded-2xl p-6 shadow-xs space-y-5">
         <div class="flex items-start justify-between">
           <div>
@@ -284,9 +305,10 @@ const verify2FaCode = async () => {
           </div>
           <span
             :class="is2FaEnabled ? 'bg-[#ECFDF5] text-[#059669] border-[#A7F3D0]' : 'bg-[#F5F5F4] text-[#78716C] border-[#E7E5E4]'"
-            class="px-2.5 py-1 rounded-full text-[11px] font-bold border shrink-0"
+            class="px-2.5 py-1 rounded-full text-[11px] font-bold border shrink-0 inline-flex items-center gap-1"
           >
-            {{ is2FaEnabled ? "Підключено ✓" : "Не підключено" }}
+            <span>{{ is2FaEnabled ? "Підключено" : "Не підключено" }}</span>
+            <IconCheck v-if="is2FaEnabled" class="w-3.5 h-3.5" :stroke-width="2.5" />
           </span>
         </div>
 
@@ -296,7 +318,10 @@ const verify2FaCode = async () => {
 
         <div v-if="is2FaEnabled && !showSetupPanel" class="p-5 bg-[#ECFDF5]/60 border border-[#A7F3D0] rounded-xl space-y-3 text-xs">
           <div>
-            <p class="font-bold text-[#065F46] text-sm">✓ Двофакторний захист TOTP активний</p>
+            <p class="font-bold text-[#065F46] text-sm flex items-center gap-1.5">
+              <IconShieldCheck class="w-4 h-4 shrink-0" :stroke-width="2.2" />
+              <span>Двофакторний захист TOTP активний</span>
+            </p>
             <p class="text-[#047857] mt-0.5">Вхід у ваш профіль захищено одноразовими динамічними кодами.</p>
           </div>
           <div class="flex flex-wrap gap-2 pt-2">
@@ -323,7 +348,6 @@ const verify2FaCode = async () => {
           </button>
         </div>
 
-        <!-- Панель з QR-кодом та резервним ключем -->
         <div v-if="showSetupPanel" class="space-y-4 text-xs">
           <div class="p-4 bg-[#FAF8F5] border border-[#E7E5E4] rounded-xl space-y-4">
             <div class="flex items-center justify-between">
@@ -333,7 +357,6 @@ const verify2FaCode = async () => {
               </button>
             </div>
 
-            <!-- Блок QR-коду та швидкої інструкції -->
             <div class="flex flex-col sm:flex-row items-center gap-5 bg-white p-4 rounded-xl border border-[#E7E5E4]">
               <div class="shrink-0 p-2 bg-white rounded-lg border border-[#E7E5E4] shadow-xs">
                 <img v-if="qrDataUrl" :src="qrDataUrl" alt="2FA QR Code" class="w-40 h-40 object-contain" />
@@ -349,28 +372,29 @@ const verify2FaCode = async () => {
                   <li>Натисніть <strong>«+»</strong> у правому нижньому кутку.</li>
                   <li>Оберіть <strong>«Сканувати QR-код»</strong> та наведіть камеру на зображення ліворуч.</li>
                 </ol>
-                <p class="text-[10px] text-[#059669] font-bold pt-1">
-                  ✓ Назва та параметри підставляться автоматично!
+                <p class="text-[10px] text-[#059669] font-bold pt-1 flex items-center gap-1">
+                  <IconCheck class="w-3.5 h-3.5 shrink-0" :stroke-width="2.5" />
+                  <span>Назва та параметри підставляться автоматично!</span>
                 </p>
               </div>
             </div>
 
-            <!-- Резервний спосіб через текстовий ключ -->
             <div class="pt-2 border-t border-[#E7E5E4] space-y-2">
               <span class="text-[11px] font-bold text-[#44403C] block">
                 Спосіб 2: Введення вручну (якщо камера недоступна):
               </span>
               <div class="flex items-center gap-2">
                 <input :value="base32Secret" readonly class="flex-1 px-3 py-1.5 bg-white border border-[#FECDD3] rounded-lg font-mono font-black text-xs text-[#881337] tracking-wider" />
-                <button @click="copyText(base32Secret, 'key')" class="px-3 py-1.5 bg-[#881337] text-white rounded-lg font-bold text-[11px] cursor-pointer">
-                  {{ copiedKey ? "Скопійовано ✓" : "Копіювати ключ" }}
+                <button @click="copyText(base32Secret, 'key')" class="px-3 py-1.5 bg-[#881337] text-white rounded-lg font-bold text-[11px] cursor-pointer inline-flex items-center gap-1">
+                  <IconCheck v-if="copiedKey" class="w-3.5 h-3.5" :stroke-width="2.5" />
+                  <IconCopy v-else class="w-3.5 h-3.5" :stroke-width="2" />
+                  <span>{{ copiedKey ? "Скопійовано" : "Копіювати ключ" }}</span>
                 </button>
               </div>
               <span class="text-[10px] text-[#78716C] block">Розбивка по 4 символи: <strong class="font-mono text-[#1e293b]">{{ formattedSecret }}</strong> (тип ключа: За часом)</span>
             </div>
           </div>
 
-          <!-- Підтвердження введенням коду -->
           <div class="p-4 bg-white border border-[#E7E5E4] rounded-xl space-y-3">
             <label class="block font-bold text-[#1e293b]">
               Введіть 6-значний код із телефона для активації:

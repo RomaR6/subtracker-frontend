@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { IconX, IconFileInvoice, IconCheck } from "@tabler/icons-vue";
 import api from "../../api/axios";
 
 const props = defineProps<{
@@ -90,17 +91,18 @@ const handleClose = () => {
     <div class="bg-white border border-[#E7E5E4] rounded-2xl max-w-md w-full p-6 shadow-2xl text-left">
       <div class="flex justify-between items-center pb-3 border-b border-[#E7E5E4]">
         <h3 class="font-bold text-base text-[#1e293b]">Аналіз та імпорт PDF-інвойсу</h3>
-        <button @click="handleClose" class="text-[#78716C] hover:text-[#1e293b] text-sm p-1 cursor-pointer">✕</button>
+        <button @click="handleClose" class="text-[#78716C] hover:text-[#1e293b] p-1 cursor-pointer">
+          <IconX class="w-4 h-4" :stroke-width="2.2" />
+        </button>
       </div>
 
       <div v-if="errorMsg" class="mt-3 p-2.5 bg-[#FEF2F2] border border-[#FECDD3] text-[#DC2626] rounded-lg text-xs font-medium">
         {{ errorMsg }}
       </div>
 
-      <!-- Зона завантаження -->
       <div v-if="!parsedResult" class="mt-4 space-y-4">
         <label class="border-2 border-dashed border-[#D6D3D1] hover:border-[#881337] rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer bg-[#FAF8F5] transition text-center">
-          <span class="text-3xl mb-2">📑</span>
+          <IconFileInvoice class="w-10 h-10 mb-2 text-[#881337]" :stroke-width="1.8" />
           <span class="text-xs font-bold text-[#1e293b]">
             {{ selectedFile ? selectedFile.name : "Оберіть або перетягніть PDF-рахунок" }}
           </span>
@@ -122,10 +124,12 @@ const handleClose = () => {
         </div>
       </div>
 
-      <!-- Картка результатів розпізнавання -->
       <div v-else class="mt-4 space-y-3.5 text-xs">
         <div class="p-3 bg-[#ECFDF5] border border-[#A7F3D0] rounded-xl text-[#065F46]">
-          <p class="font-bold">✓ Файл успішно розпізнано модулем InvoiceParser</p>
+          <p class="font-bold flex items-center gap-1.5">
+            <IconCheck class="w-4 h-4 text-[#065F46] shrink-0" :stroke-width="2.5" />
+            <span>Файл успішно розпізнано модулем InvoiceParser</span>
+          </p>
           <p class="text-[11px] mt-0.5">Параметри вилучено та підготовлено для внесення в реєстр.</p>
         </div>
 

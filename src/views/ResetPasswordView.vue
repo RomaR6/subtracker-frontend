@@ -2,6 +2,7 @@
 import subtrackLogo from "../assets/subtrack_logo.jpg";
 import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { IconEye, IconEyeOff, IconArrowLeft } from "@tabler/icons-vue";
 import api from "../api/axios";
 
 const route = useRoute();
@@ -91,7 +92,8 @@ const handleReset = async () => {
               @click="showPassword = !showPassword"
               class="absolute right-3 top-1/2 -translate-y-1/2 text-[#78716C] hover:text-[#1e293b] p-1 cursor-pointer"
             >
-              {{ showPassword ? '👁️' : '👁️‍🗨️' }}
+              <IconEyeOff v-if="showPassword" class="w-4 h-4" :stroke-width="2" />
+              <IconEye v-else class="w-4 h-4" :stroke-width="2" />
             </button>
           </div>
         </div>
@@ -117,8 +119,9 @@ const handleReset = async () => {
       </form>
 
       <div class="mt-6 text-center">
-        <router-link to="/login" class="text-xs text-[#881337] font-bold hover:underline">
-          ← Повернутися до входу
+        <router-link to="/login" class="text-xs text-[#881337] font-bold hover:underline inline-flex items-center gap-1">
+          <IconArrowLeft class="w-3.5 h-3.5" :stroke-width="2.5" />
+          <span>Повернутися до входу</span>
         </router-link>
       </div>
     </div>

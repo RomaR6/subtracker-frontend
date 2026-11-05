@@ -1,5 +1,6 @@
 ﻿<script setup lang="ts">
 import { ref, onMounted, watch } from "vue";
+import { IconCurrencyHryvnia, IconCurrencyDollar, IconUser, IconArrowRight } from "@tabler/icons-vue";
 import api from "../api/axios";
 import { useWorkspaceStore } from "../stores/workspace";
 import CashFlowChart from "../components/dashboard/CashFlowChart.vue";
@@ -60,16 +61,18 @@ onMounted(async () => {
           <button
             @click="activeCurrency = 'UAH'"
             :class="activeCurrency === 'UAH' ? 'bg-[#881337] text-white shadow-xs' : 'text-[#78716C] hover:text-[#1e293b]'"
-            class="px-3 py-1 rounded-lg transition cursor-pointer"
+            class="px-3 py-1 rounded-lg transition cursor-pointer flex items-center gap-1"
           >
-            ₴ UAH
+            <IconCurrencyHryvnia class="w-3.5 h-3.5" :stroke-width="2.2" />
+            <span>UAH</span>
           </button>
           <button
             @click="activeCurrency = 'USD'"
             :class="activeCurrency === 'USD' ? 'bg-[#881337] text-white shadow-xs' : 'text-[#78716C] hover:text-[#1e293b]'"
-            class="px-3 py-1 rounded-lg transition cursor-pointer"
+            class="px-3 py-1 rounded-lg transition cursor-pointer flex items-center gap-1"
           >
-            $ USD
+            <IconCurrencyDollar class="w-3.5 h-3.5" :stroke-width="2.2" />
+            <span>USD</span>
           </button>
         </div>
       </div>
@@ -79,8 +82,9 @@ onMounted(async () => {
       <div class="bg-white border border-[#E7E5E4] p-5 rounded-2xl shadow-xs text-left">
         <div class="flex justify-between items-start">
           <span class="text-xs font-bold text-[#78716C]">Місячні витрати</span>
-          <span class="w-7 h-7 rounded-lg bg-[#FEF2F2] text-[#881337] flex items-center justify-center text-xs font-black">
-            {{ activeCurrency === 'UAH' ? '₴' : '$' }}
+          <span class="w-7 h-7 rounded-lg bg-[#FEF2F2] text-[#881337] flex items-center justify-center">
+            <IconCurrencyHryvnia v-if="activeCurrency === 'UAH'" class="w-4 h-4" :stroke-width="2.2" />
+            <IconCurrencyDollar v-else class="w-4 h-4" :stroke-width="2.2" />
           </span>
         </div>
         <div class="text-2xl font-black text-[#1e293b] mt-3">
@@ -129,7 +133,9 @@ onMounted(async () => {
       <div class="bg-white border border-[#E7E5E4] p-5 rounded-2xl shadow-xs text-left">
         <div class="flex justify-between items-start">
           <span class="text-xs font-bold text-[#78716C]">Середній чек / спеціаліст</span>
-          <span class="text-sm">👤</span>
+          <span class="w-7 h-7 rounded-lg bg-[#FAF8F5] border border-[#E7E5E4] text-[#881337] flex items-center justify-center">
+            <IconUser class="w-4 h-4" :stroke-width="2" />
+          </span>
         </div>
         <div class="text-2xl font-black text-[#1e293b] mt-3">
           ₴{{ dashboardData ? dashboardData.avg_check_per_engineer_uah.toLocaleString('uk-UA') : '0' }}
@@ -179,8 +185,9 @@ onMounted(async () => {
           <h3 class="font-black text-sm text-[#1e293b]">Ключові цифрові активи за обсягом витрат</h3>
           <p class="text-[11px] text-[#78716C] mt-0.5">Підписки з найбільшим впливом на щомісячний бюджет компанії</p>
         </div>
-        <router-link to="/app/subscriptions" class="text-xs font-bold text-[#881337] hover:underline cursor-pointer">
-          Усі підписки →
+        <router-link to="/app/subscriptions" class="text-xs font-bold text-[#881337] hover:underline cursor-pointer flex items-center gap-1">
+          <span>Усі підписки</span>
+          <IconArrowRight class="w-3.5 h-3.5" :stroke-width="2.5" />
         </router-link>
       </div>
 

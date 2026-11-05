@@ -1,6 +1,7 @@
 ﻿<script setup lang="ts">
 import { ref, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
+import { IconPackageExport, IconArrowLeft, IconDownload } from "@tabler/icons-vue";
 import api from "../api/axios";
 import { useAuthStore } from "../stores/auth";
 import { useWorkspaceStore } from "../stores/workspace";
@@ -43,7 +44,6 @@ watch(() => wsStore.currentWorkspace?.id, fetchAuditLogs);
 
 onMounted(fetchAuditLogs);
 
-// Форматування сирих даних JSONB у зрозуміле резюме
 const formatLogDetails = (action: string, details: any): string => {
   if (!details || typeof details !== "object") return "Без додаткових параметрів";
 
@@ -76,7 +76,6 @@ const formatLogDetails = (action: string, details: any): string => {
   }
 };
 
-// Завантаження окремого JSON-файлу події
 const downloadSingleLogJson = (log: any) => {
   const exportData = {
     audit_id: log.id,
@@ -96,7 +95,6 @@ const downloadSingleLogJson = (log: any) => {
   URL.revokeObjectURL(url);
 };
 
-// Завантаження всього масиву подій
 const exportAllAuditJson = () => {
   const wsName = wsStore.currentWorkspace?.name || "workspace";
   const jsonStr = JSON.stringify(logs.value, null, 2);
@@ -130,7 +128,8 @@ const exportAllAuditJson = () => {
           @click="exportAllAuditJson"
           class="px-3.5 py-2 bg-white hover:bg-[#FAF8F5] text-[#881337] border border-[#FECDD3] rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer"
         >
-          <span>📦 Експорт аудиту (.json)</span>
+          <IconPackageExport class="w-4 h-4" :stroke-width="2" />
+          <span>Експорт аудиту (.json)</span>
         </button>
 
         <router-link
@@ -138,7 +137,8 @@ const exportAllAuditJson = () => {
           to="/app/admin/workspaces"
           class="text-xs font-bold text-[#881337] hover:underline flex items-center gap-1"
         >
-          ← До реєстру організацій
+          <IconArrowLeft class="w-3.5 h-3.5" :stroke-width="2.5" />
+          <span>До реєстру організацій</span>
         </router-link>
       </div>
     </div>
@@ -179,7 +179,7 @@ const exportAllAuditJson = () => {
                 class="px-2.5 py-1 bg-[#FAF8F5] hover:bg-[#FEF2F2] hover:text-[#881337] hover:border-[#FECDD3] text-[#78716C] border border-[#E7E5E4] rounded-lg text-[10px] font-mono font-bold transition cursor-pointer inline-flex items-center gap-1 shadow-2xs"
               >
                 <span>JSON</span>
-                <span>⤓</span>
+                <IconDownload class="w-3 h-3" :stroke-width="2.2" />
               </button>
             </td>
           </tr>

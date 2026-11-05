@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue";
+import { IconArrowRight, IconCheck, IconTag, IconBrandTelegram } from "@tabler/icons-vue";
 import api from "../api/axios";
 import { useAuthStore } from "../stores/auth";
 import { useWorkspaceStore } from "../stores/workspace";
@@ -83,7 +84,7 @@ const sendDiscordReminders = async () => {
 
   try {
     const res = await api.post(`/workspaces/${currentWsId.value}/webhooks/send-reminders`);
-    webhookFeedback.value = `Успішно надіслано в Discord! Оброблено карток: ${res.data?.sent_discord_count || 0} ✓`;
+    webhookFeedback.value = `Успішно надіслано в Discord! Оброблено карток: ${res.data?.sent_discord_count || 0}`;
     setTimeout(() => { webhookFeedback.value = ""; }, 4000);
   } catch (err: any) {
     webhookFeedback.value = err.response?.data?.detail || "Не вдалося надіслати сповіщення у вебхук.";
@@ -101,7 +102,7 @@ const saveTelegramChatId = () => {
 const toggleAutoAlerts = () => {
   isAutoAlertsEnabled.value = !isAutoAlertsEnabled.value;
   localStorage.setItem("subtracker_tg_enabled", String(isAutoAlertsEnabled.value));
-  tgFeedback.value = isAutoAlertsEnabled.value ? "Автосповіщення активовано ✓" : "Автосповіщення призупинено";
+  tgFeedback.value = isAutoAlertsEnabled.value ? "Автосповіщення активовано" : "Автосповіщення призупинено";
   setTimeout(() => { tgFeedback.value = ""; }, 2500);
 };
 
@@ -113,7 +114,7 @@ const sendTelegramReminders = async () => {
     const res = await api.post(
       `/workspaces/${currentWsId.value}/telegram/send-reminders?chat_id=${telegramChatId.value.trim()}`
     );
-    tgFeedback.value = `Дедлайни простору надіслано в Telegram! Оброблено: ${res.data?.sent_telegram_count || 0} ✓`;
+    tgFeedback.value = `Дедлайни простору надіслано в Telegram! Оброблено: ${res.data?.sent_telegram_count || 0}`;
     setTimeout(() => { tgFeedback.value = ""; }, 4000);
   } catch (err: any) {
     tgFeedback.value = err.response?.data?.detail || "Не вдалося відправити нагадування в Telegram.";
@@ -150,7 +151,6 @@ const addCategory = async () => {
     </div>
 
     <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-      <!-- Webhooks (Discord / Slack) -->
       <div class="bg-white border border-[#E7E5E4] p-6 rounded-2xl shadow-xs space-y-4">
         <div>
           <h3 class="font-bold text-sm text-[#1e293b]">Корпоративні Webhooks (Slack / Discord)</h3>
@@ -181,14 +181,14 @@ const addCategory = async () => {
           <button
             @click="sendDiscordReminders"
             :disabled="isSendingDiscord || !webhookUrl.trim()"
-            class="px-4 py-2 bg-[#FAF8F5] border border-[#E7E5E4] hover:bg-[#E7E5E4] rounded-lg text-xs font-bold cursor-pointer transition disabled:opacity-50"
+            class="px-4 py-2 bg-[#FAF8F5] border border-[#E7E5E4] hover:bg-[#E7E5E4] rounded-lg text-xs font-bold cursor-pointer transition disabled:opacity-50 inline-flex items-center gap-1.5"
           >
-            {{ isSendingDiscord ? "Надсилання..." : "Надіслати дедлайни простору в Discord ➔" }}
+            <span>{{ isSendingDiscord ? "Надсилання..." : "Надіслати дедлайни простору в Discord" }}</span>
+            <IconArrowRight v-if="!isSendingDiscord" class="w-3.5 h-3.5" :stroke-width="2.5" />
           </button>
         </div>
       </div>
 
-      <!-- Telegram Alerts -->
       <div class="bg-white border border-[#E7E5E4] p-6 rounded-2xl shadow-xs space-y-4">
         <div class="flex items-center justify-between">
           <div>
@@ -198,9 +198,10 @@ const addCategory = async () => {
           <button
             @click="toggleAutoAlerts"
             :class="isAutoAlertsEnabled ? 'bg-[#ECFDF5] text-[#059669] border-[#A7F3D0]' : 'bg-[#F5F5F4] text-[#78716C] border-[#E7E5E4]'"
-            class="px-2.5 py-1 rounded-full text-[10px] font-bold border transition cursor-pointer"
+            class="px-2.5 py-1 rounded-full text-[10px] font-bold border transition cursor-pointer inline-flex items-center gap-1"
           >
-            {{ isAutoAlertsEnabled ? "Активно ✓" : "Призупинено" }}
+            <span>{{ isAutoAlertsEnabled ? "Активно" : "Призупинено" }}</span>
+            <IconCheck v-if="isAutoAlertsEnabled" class="w-3 h-3" :stroke-width="2.5" />
           </button>
         </div>
 
@@ -234,13 +235,13 @@ const addCategory = async () => {
             :disabled="isSendingTelegram"
             class="w-full py-2.5 px-4 bg-[#881337] hover:bg-[#9F1239] text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-xs flex items-center justify-center gap-2 disabled:opacity-50"
           >
+            <IconBrandTelegram class="w-4 h-4" :stroke-width="2" />
             <span>{{ isSendingTelegram ? "Аналіз дедлайнів..." : "Надіслати дедлайни цього простору в Telegram" }}</span>
-            <span v-if="!isSendingTelegram">➔</span>
+            <IconArrowRight v-if="!isSendingTelegram" class="w-3.5 h-3.5" :stroke-width="2.5" />
           </button>
         </div>
       </div>
 
-      <!-- Категорії -->
       <div class="bg-white border border-[#E7E5E4] p-6 rounded-2xl shadow-xs space-y-4 lg:col-span-2">
         <h3 class="font-bold text-sm text-[#1e293b]">Категорії цифрових активів</h3>
         <p class="text-xs text-[#78716C]">Керування довідником категорій підписок для аналітики та звітів.</p>
@@ -265,9 +266,10 @@ const addCategory = async () => {
           <span
             v-for="cat in categories"
             :key="cat.id"
-            class="px-3 py-1.5 bg-[#FAF8F5] border border-[#E7E5E4] rounded-xl text-xs font-semibold text-[#44403C]"
+            class="px-3 py-1.5 bg-[#FAF8F5] border border-[#E7E5E4] rounded-xl text-xs font-semibold text-[#44403C] inline-flex items-center gap-1.5"
           >
-            🏷 {{ cat.name }}
+            <IconTag class="w-3.5 h-3.5 text-[#881337]" :stroke-width="2" />
+            <span>{{ cat.name }}</span>
           </span>
         </div>
       </div>

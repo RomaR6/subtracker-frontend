@@ -1,5 +1,6 @@
 ﻿<script setup lang="ts">
 import { ref, onMounted } from "vue";
+import { IconFileSpreadsheet, IconFileTypePdf } from "@tabler/icons-vue";
 import api from "../api/axios";
 import { useAuthStore } from "../stores/auth";
 import { useWorkspaceStore } from "../stores/workspace";
@@ -71,11 +72,13 @@ const exportCsv = () => {
       </div>
 
       <div v-if="authStore.isAdminOrManager" class="flex gap-2">
-        <button @click="exportCsv" class="px-3.5 py-2 bg-white border border-[#E7E5E4] rounded-lg text-xs font-bold hover:bg-[#FAF8F5] cursor-pointer">
-          📥 Звіт CSV
+        <button @click="exportCsv" class="px-3.5 py-2 bg-white border border-[#E7E5E4] rounded-lg text-xs font-bold hover:bg-[#FAF8F5] cursor-pointer flex items-center gap-1.5">
+          <IconFileSpreadsheet class="w-4 h-4 text-[#059669]" :stroke-width="2" />
+          <span>Звіт CSV</span>
         </button>
-        <button @click="exportPdf" class="px-3.5 py-2 bg-[#881337] text-white rounded-lg text-xs font-bold hover:bg-[#9F1239] cursor-pointer">
-          📄 Офіційний аудит PDF
+        <button @click="exportPdf" class="px-3.5 py-2 bg-[#881337] text-white rounded-lg text-xs font-bold hover:bg-[#9F1239] cursor-pointer flex items-center gap-1.5">
+          <IconFileTypePdf class="w-4 h-4" :stroke-width="2" />
+          <span>Офіційний аудит PDF</span>
         </button>
       </div>
     </div>

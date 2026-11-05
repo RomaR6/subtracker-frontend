@@ -1,6 +1,7 @@
 ﻿<script setup lang="ts">
 import { useDialogStore } from "../stores/dialog";
 import { ref, onMounted } from "vue";
+import { IconTrash, IconCheck, IconCopy } from "@tabler/icons-vue";
 import { useAuthStore } from "../stores/auth";
 import api from "../api/axios";
 import { useWorkspaceStore } from "../stores/workspace";
@@ -143,7 +144,6 @@ const removeMember = async (member: any) => {
               </td>
               <td class="py-3 px-4 text-[#78716C]">{{ m.user?.email || m.email }}</td>
               <td class="py-3 px-4">
-                <!-- Власник простору -->
                 <span
                   v-if="isOwner(m)"
                   class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#FEF2F2] text-[#881337] border border-[#FECDD3]"
@@ -151,7 +151,6 @@ const removeMember = async (member: any) => {
                   Admin (Власник)
                 </span>
 
-                <!-- Поточний залогінений користувач -->
                 <span
                   v-else-if="isCurrentUser(m)"
                   class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#FEF2F2] text-[#881337] border border-[#FECDD3]"
@@ -159,7 +158,6 @@ const removeMember = async (member: any) => {
                   {{ m.role_name || m.role }}
                 </span>
 
-                <!-- Інші учасники: тільки Admin може змінювати роль -->
                 <select
                   v-else-if="authStore.role === 'Admin'"
                   :value="m.role_name || m.role"
@@ -171,7 +169,6 @@ const removeMember = async (member: any) => {
                   <option value="Member">Member</option>
                 </select>
 
-                <!-- Відображення для Manager / Member без права зміни -->
                 <span
                   v-else
                   class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#FAF8F5] text-[#44403C] border border-[#E7E5E4]"
@@ -182,7 +179,6 @@ const removeMember = async (member: any) => {
               <td class="py-3 px-4 text-center font-semibold text-[#059669]">
                 Активний
               </td>
-              <!-- Дії доступні ТІЛЬКИ Admin -->
               <td v-if="authStore.role === 'Admin'" class="py-3 px-4 text-right">
                 <button
                   v-if="!isOwner(m) && !isCurrentUser(m)"
@@ -190,7 +186,7 @@ const removeMember = async (member: any) => {
                   title="Вилучити з команди"
                   class="text-[#78716C] hover:text-[#DC2626] font-semibold text-xs p-1 cursor-pointer transition"
                 >
-                  🗑
+                  <IconTrash class="w-4 h-4" :stroke-width="2" />
                 </button>
               </td>
             </tr>
@@ -221,7 +217,6 @@ const removeMember = async (member: any) => {
           <select v-model="inviteRole" class="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E7E5E4] rounded-lg text-xs">
             <option value="Member">Member (Співробітник)</option>
             <option value="Manager">Manager (Керівник)</option>
-            <!-- Опція Admin доступна ТІЛЬКИ діючому Admin -->
             <option v-if="authStore.role === 'Admin'" value="Admin">Admin (Адміністратор)</option>
           </select>
         </div>
@@ -236,8 +231,10 @@ const removeMember = async (member: any) => {
         <div v-if="generatedInviteLink" class="p-3 bg-[#FAF8F5] border border-[#E7E5E4] rounded-xl space-y-2">
           <span class="text-[10px] text-[#78716C] font-bold block">Посилання для запрошення:</span>
           <input :value="generatedInviteLink" readonly class="w-full px-2 py-1 bg-white border border-[#E7E5E4] rounded text-[11px] font-mono select-all" />
-          <button @click="copyLink" class="w-full py-1 bg-[#1e293b] text-white rounded text-[11px] font-bold cursor-pointer">
-            {{ copySuccess ? "Скопійовано ✓" : "Копіювати посилання" }}
+          <button @click="copyLink" class="w-full py-1.5 bg-[#1e293b] text-white rounded text-[11px] font-bold cursor-pointer flex items-center justify-center gap-1">
+            <IconCheck v-if="copySuccess" class="w-3.5 h-3.5" :stroke-width="2.5" />
+            <IconCopy v-else class="w-3.5 h-3.5" :stroke-width="2" />
+            <span>{{ copySuccess ? "Скопійовано" : "Копіювати посилання" }}</span>
           </button>
         </div>
       </div>

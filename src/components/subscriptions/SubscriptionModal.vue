@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
+import { IconX } from "@tabler/icons-vue";
 import api from "../../api/axios";
 
 const props = defineProps<{
@@ -105,7 +106,9 @@ const handleSubmit = async () => {
         <h3 class="font-bold text-base text-[#1e293b]">
           {{ editItem ? "Редагування підписки" : "Додати нову підписку" }}
         </h3>
-        <button @click="emit('close')" class="text-[#78716C] hover:text-[#1e293b] text-sm p-1">✕</button>
+        <button @click="emit('close')" class="text-[#78716C] hover:text-[#1e293b] p-1 cursor-pointer">
+          <IconX class="w-4 h-4" :stroke-width="2.2" />
+        </button>
       </div>
 
       <div v-if="errorMsg" class="mt-3 p-2.5 bg-[#FEF2F2] border border-[#FECDD3] text-[#DC2626] rounded-lg text-xs font-medium">
@@ -155,16 +158,14 @@ const handleSubmit = async () => {
             </select>
           </div>
           <div>
-            
-          <div>
-            <label class="block font-bold text-[#44403C] mb-1">Статус ліцензії</label>
-            <select v-model="form.status" class="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E7E5E4] rounded-lg text-xs">
-              <option value="active">Активна (в роботі)</option>
-              <option value="inactive">Призупинена (на паузі)</option>
-            </select>
-          </div>
-  
-        <label class="block font-bold text-[#44403C] mb-1">Наступна сплата *</label>
+            <div>
+              <label class="block font-bold text-[#44403C] mb-1">Статус ліцензії</label>
+              <select v-model="form.status" class="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E7E5E4] rounded-lg text-xs">
+                <option value="active">Активна (в роботі)</option>
+                <option value="inactive">Призупинена (на паузі)</option>
+              </select>
+            </div>
+            <label class="block font-bold text-[#44403C] mb-1 mt-2">Наступна сплата *</label>
             <input v-model="form.next_payment_date" type="date" :min="todayDate" required class="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E7E5E4] rounded-lg text-xs" />
           </div>
         </div>
