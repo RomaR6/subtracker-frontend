@@ -1,7 +1,17 @@
 import axios from "axios";
 
+const isProduction =
+  typeof window !== "undefined" &&
+  !window.location.hostname.includes("localhost") &&
+  !window.location.hostname.includes("127.0.0.1");
+
+
+const defaultBaseUrl = isProduction
+  ? "https://subtracker-backend-reos.onrender.com/api/v1"
+  : "http://127.0.0.1:8000/api/v1";
+
 const api = axios.create({
-  baseURL: "http://127.0.0.1:8000/api/v1",
+  baseURL: import.meta.env.VITE_API_URL || defaultBaseUrl,
   headers: {
     "Content-Type": "application/json"
   }
