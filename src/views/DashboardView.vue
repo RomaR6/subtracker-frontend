@@ -8,25 +8,41 @@ import UpcomingPaymentsList from "../components/dashboard/UpcomingPaymentsList.v
 
 const wsStore = useWorkspaceStore();
 const activeCurrency = ref<"UAH" | "USD">("UAH");
-const dashboardData = ref<any>(null);
-const topSubscriptions = ref<any[]>([]);
-const isLoading = ref(true);
+
+const getCachedDashboard = () => {
+  try {
+    const cached = localStorage.getItem("subtracker_dashboard_cache");
+    return cached ? JSON.parse(cached) : null;
+  } catch (e) {
+    return null;
+  }
+};
+
+const cachedData = getCachedDashboard();
+const dashboardData = ref<any>(cachedData);
+const topSubscriptions = ref<any[]>(cachedData?.recent_subscriptions || []);
+const isLoading = ref(!cachedData);
 
 const fetchDashboard = async () => {
-  isLoading.value = true;
+  const wsId = wsStore.currentWorkspace?.id || 1;
   try {
-    const wsId = wsStore.currentWorkspace?.id || 1;
-    const res = await api.get(`/analytics/dashboard?workspace_id=${wsId}`);
-    dashboardData.value = res.data;
+    const [dashRes, subsRes] = await Promise.allSettled([
+      api.get(`/analytics/dashboard?workspace_id=${wsId}`),
+      api.get(`/subscriptions/?workspace_id=${wsId}&limit=5`)
+    ]);
 
-    const subsRes = await api.get(`/subscriptions/?workspace_id=${wsId}&limit=5`);
-    if (Array.isArray(subsRes.data)) {
-      topSubscriptions.value = [...subsRes.data]
+    if (dashRes.status === "fulfilled") {
+      dashboardData.value = dashRes.value.data;
+      localStorage.setItem("subtracker_dashboard_cache", JSON.stringify(dashRes.value.data));
+    }
+
+    if (subsRes.status === "fulfilled" && Array.isArray(subsRes.value.data)) {
+      topSubscriptions.value = [...subsRes.value.data]
         .sort((a, b) => (Number(b.cost_usd || b.cost) || 0) - (Number(a.cost_usd || a.cost) || 0))
         .slice(0, 5);
     }
   } catch (err) {
-    console.error("Помилка завантаження дашборду:", err);
+    console.error(err);
   } finally {
     isLoading.value = false;
   }
@@ -36,11 +52,11 @@ watch(() => wsStore.currentWorkspace?.id, () => {
   fetchDashboard();
 });
 
-onMounted(async () => {
-  if (!wsStore.currentWorkspace) {
-    await wsStore.fetchWorkspaces();
+onMounted(() => {
+  fetchDashboard();
+  if (wsStore.workspaces.length === 0) {
+    wsStore.fetchWorkspaces();
   }
-  await fetchDashboard();
 });
 </script>
 

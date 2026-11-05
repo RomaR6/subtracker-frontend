@@ -5,7 +5,15 @@ import {
   IconChevronDown,
   IconPlus,
   IconRefresh,
-  IconShieldCheck
+  IconShieldCheck,
+  IconLayoutDashboard,
+  IconApps,
+  IconClipboardCheck,
+  IconChartBar,
+  IconUsers,
+  IconSettings,
+  IconUser,
+  IconBuildingSkyscraper
 } from "@tabler/icons-vue";
 import subtrackLogo from "../assets/subtrack_logo.jpg";
 import api from "../api/axios";
@@ -40,10 +48,11 @@ const fetchPendingCount = async () => {
 
 watch(() => wsStore.currentWorkspace?.id, fetchPendingCount);
 
-onMounted(async () => {
-  await wsStore.fetchRates();
-  await wsStore.fetchWorkspaces();
-  await fetchPendingCount();
+onMounted(() => {
+  Promise.allSettled([
+    wsStore.fetchRates(),
+    wsStore.fetchWorkspaces().then(() => fetchPendingCount())
+  ]);
 });
 
 const syncNbuRates = async () => {
@@ -88,13 +97,13 @@ const navLinks = computed(() => {
   const isMember = authStore.role === "Member";
 
   const allLinks = [
-    { name: "Дашборд витрат", route: "/app/dashboard" },
-    { name: "Каталог підписок", route: "/app/subscriptions" },
-    { name: "Центр погоджень", route: "/app/requests", hasBadge: true },
-    { name: "Фінансова аналітика", route: "/app/analytics", adminOnly: true },
-    { name: "Команда та ролі", route: "/app/team" },
-    { name: "Налаштування", route: "/app/settings", adminOnly: true },
-    { name: "Особистий кабінет", route: "/app/profile" }
+    { name: "Дашборд витрат", route: "/app/dashboard", icon: IconLayoutDashboard },
+    { name: "Каталог підписок", route: "/app/subscriptions", icon: IconApps },
+    { name: "Центр погоджень", route: "/app/requests", icon: IconClipboardCheck, hasBadge: true },
+    { name: "Фінансова аналітика", route: "/app/analytics", icon: IconChartBar, adminOnly: true },
+    { name: "Команда та ролі", route: "/app/team", icon: IconUsers },
+    { name: "Налаштування", route: "/app/settings", icon: IconSettings, adminOnly: true },
+    { name: "Особистий кабінет", route: "/app/profile", icon: IconUser }
   ];
 
   if (isMember) {
@@ -106,30 +115,30 @@ const navLinks = computed(() => {
 
 <template>
   <div class="min-h-screen bg-[#FAF8F5] text-[#1e293b] font-sans antialiased">
-    <header class="bg-white border-b border-[#E7E5E4] px-6 py-3 flex items-center justify-between sticky top-0 z-40 shadow-xs">
+    <header class="bg-white border-b border-[#E7E5E4] px-6 py-3.5 flex items-center justify-between sticky top-0 z-40 shadow-xs">
       <div class="flex items-center gap-4">
-        <router-link to="/app/dashboard" class="flex items-center gap-2">
-          <div class="h-9 w-9 rounded-xl border border-[#E7E5E4] bg-white overflow-hidden shadow-xs flex items-center justify-center p-0.5 shrink-0">
-            <img :src="subtrackLogo" alt="SubTracker" class="w-full h-full object-contain scale-110 -translate-x-0.5 translate-y-0.5" />
+        <router-link to="/app/dashboard" class="flex items-center gap-2.5">
+          <div class="h-10 w-10 rounded-xl border border-[#E7E5E4] bg-white overflow-hidden shadow-xs flex items-center justify-center p-0.5 shrink-0">
+            <img :src="subtrackLogo" alt="SubTracker" class="w-full h-full object-contain scale-125 -translate-y-0.5 -translate-x-0.5" />
           </div>
-          <span class="font-bold text-lg tracking-tight text-[#1e293b]">SubTracker B2B</span>
+          <span class="font-black text-xl tracking-tight text-[#1e293b]">SubTracker B2B</span>
         </router-link>
 
-        <div class="h-5 w-px bg-[#E7E5E4] mx-1"></div>
+        <div class="h-6 w-px bg-[#E7E5E4] mx-1"></div>
 
         <div class="relative">
           <button
             @click="showWsDropdown = !showWsDropdown"
-            class="flex items-center gap-2 bg-[#F5F5F4] hover:bg-[#E7E5E4] px-3 py-1.5 rounded-lg border border-[#E7E5E4] text-xs font-semibold transition cursor-pointer"
+            class="flex items-center gap-2.5 bg-[#F5F5F4] hover:bg-[#E7E5E4] px-3.5 py-2 rounded-xl border border-[#E7E5E4] text-xs font-bold transition cursor-pointer"
           >
             <span>{{ wsStore.currentWorkspace?.name || "NovaTech IT Core" }}</span>
-            <span class="text-[#78716C] bg-white px-1.5 py-0.5 rounded text-[10px] border border-[#E7E5E4]">₴ UAH</span>
-            <IconChevronDown class="w-3.5 h-3.5 text-[#78716C]" :stroke-width="2.2" />
+            <span class="text-[#78716C] bg-white px-2 py-0.5 rounded text-[10px] border border-[#E7E5E4]">₴ UAH</span>
+            <IconChevronDown class="w-4 h-4 text-[#78716C]" :stroke-width="2.2" />
           </button>
 
           <div
             v-if="showWsDropdown"
-            class="absolute left-0 mt-1 w-56 bg-white border border-[#E7E5E4] rounded-xl shadow-lg p-1.5 z-50 text-left text-xs"
+            class="absolute left-0 mt-1 w-60 bg-white border border-[#E7E5E4] rounded-xl shadow-lg p-1.5 z-50 text-left text-xs"
           >
             <div class="px-2 py-1 text-[10px] font-bold text-[#78716C] uppercase">Робочі простори:</div>
             <button
@@ -137,16 +146,16 @@ const navLinks = computed(() => {
               :key="ws.id"
               @click="wsStore.selectWorkspace(ws); showWsDropdown = false"
               :class="ws.id === wsStore.currentWorkspace?.id ? 'bg-[#FEF2F2] text-[#881337] font-bold' : 'text-[#1e293b] hover:bg-[#FAF8F5]'"
-              class="w-full text-left px-2.5 py-1.5 rounded-lg transition cursor-pointer"
+              class="w-full text-left px-3 py-2 rounded-lg transition cursor-pointer"
             >
               {{ ws.name }}
             </button>
             <div class="h-px bg-[#E7E5E4] my-1"></div>
             <button
               @click="showWsDropdown = false; showNewWsModal = true; wsCreateError = ''"
-              class="w-full text-left px-2.5 py-1.5 text-[#881337] font-bold hover:bg-[#FEF2F2] rounded-lg transition cursor-pointer flex items-center gap-1"
+              class="w-full text-left px-3 py-2 text-[#881337] font-bold hover:bg-[#FEF2F2] rounded-lg transition cursor-pointer flex items-center gap-1.5"
             >
-              <IconPlus class="w-3.5 h-3.5" :stroke-width="2.5" />
+              <IconPlus class="w-4 h-4" :stroke-width="2.5" />
               <span>Створити новий простір</span>
             </button>
           </div>
@@ -157,18 +166,18 @@ const navLinks = computed(() => {
         <button
           @click="syncNbuRates"
           :disabled="isSyncing"
-          class="bg-[#FEF3C7] hover:bg-[#FDE68A] text-[#92400E] border border-[#FDE68A] px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+          class="bg-[#FEF3C7] hover:bg-[#FDE68A] text-[#92400E] border border-[#FDE68A] px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-2 shadow-xs transition cursor-pointer"
           title="Оновити котирування через API НБУ"
         >
           <span>НБУ: $1 = {{ wsStore.usdRate.toFixed(2) }} ₴</span>
           <IconRefresh class="w-3.5 h-3.5" :class="isSyncing ? 'animate-spin' : ''" :stroke-width="2.2" />
         </button>
-        <span v-if="syncFeedback" class="text-[11px] font-bold text-[#059669]">{{ syncFeedback }}</span>
+        <span v-if="syncFeedback" class="text-xs font-bold text-[#059669]">{{ syncFeedback }}</span>
 
         <button
           v-if="authStore.isAdminOrManager"
           @click="router.push('/app/subscriptions')"
-          class="bg-[#881337] hover:bg-[#9F1239] text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
+          class="bg-[#881337] hover:bg-[#9F1239] text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
         >
           <IconPlus class="w-4 h-4" :stroke-width="2.5" />
           <span>Додати підписку</span>
@@ -179,7 +188,7 @@ const navLinks = computed(() => {
           class="flex items-center gap-2.5 pl-2 border-l border-[#E7E5E4] cursor-pointer hover:opacity-80 transition"
           title="Перейти до особистого кабінету"
         >
-          <div class="w-8 h-8 rounded-full bg-[#E7E5E4] text-[#881337] font-bold text-xs flex items-center justify-center border border-[#D6D3D1]">
+          <div class="w-9 h-9 rounded-full bg-[#E7E5E4] text-[#881337] font-bold text-xs flex items-center justify-center border border-[#D6D3D1]">
             {{ authStore.user?.first_name ? authStore.user.first_name[0] : "U" }}
           </div>
           <div class="text-left text-xs leading-tight hidden sm:block">
@@ -190,14 +199,15 @@ const navLinks = computed(() => {
       </div>
     </header>
 
-    <nav class="bg-white border-b border-[#E7E5E4] px-6 py-2 flex items-center gap-6 overflow-x-auto">
+    <nav class="bg-white border-b border-[#E7E5E4] px-6 py-2.5 flex items-center gap-3 overflow-x-auto">
       <router-link
         v-for="link in navLinks"
         :key="link.route"
         :to="link.route"
-        class="text-xs font-semibold py-2 relative flex items-center gap-1.5 transition whitespace-nowrap cursor-pointer"
-        :class="route.path === link.route ? 'text-[#881337] font-bold border-b-2 border-[#881337]' : 'text-[#78716C] hover:text-[#1e293b]'"
+        class="text-sm font-semibold px-3.5 py-2 rounded-xl flex items-center gap-2 transition whitespace-nowrap cursor-pointer"
+        :class="route.path === link.route ? 'bg-[#FEF2F2] text-[#881337] font-bold border border-[#FECDD3]' : 'text-[#78716C] hover:text-[#1e293b] hover:bg-[#FAF8F5]'"
       >
+        <component :is="link.icon" class="w-4 h-4 shrink-0" :stroke-width="route.path === link.route ? 2.5 : 2" />
         <span>{{ link.name }}</span>
         <span
           v-if="link.hasBadge && pendingRequestsCount > 0"
@@ -210,16 +220,16 @@ const navLinks = computed(() => {
       <router-link
         v-if="authStore.user?.email === 'roman@novatech.com'"
         to="/app/admin/workspaces"
-        class="text-xs font-bold py-1.5 px-3 ml-auto rounded-lg bg-[#FEF2F2] hover:bg-[#FEE2E2] text-[#881337] border border-[#FECDD3] flex items-center gap-1.5 transition cursor-pointer"
+        class="text-xs font-bold py-2 px-3.5 ml-auto rounded-xl bg-[#FEF2F2] hover:bg-[#FEE2E2] text-[#881337] border border-[#FECDD3] flex items-center gap-2 transition cursor-pointer shrink-0"
       >
-        <IconShieldCheck class="w-4 h-4" :stroke-width="2" />
+        <IconBuildingSkyscraper class="w-4 h-4" :stroke-width="2" />
         <span>Платформа (Організації)</span>
       </router-link>
 
       <router-link
         v-else-if="authStore.role === 'Admin'"
         to="/app/admin/audit-logs"
-        class="text-xs font-bold py-1.5 px-3 ml-auto rounded-lg bg-[#FEF2F2] hover:bg-[#FEE2E2] text-[#881337] border border-[#FECDD3] flex items-center gap-1.5 transition cursor-pointer"
+        class="text-xs font-bold py-2 px-3.5 ml-auto rounded-xl bg-[#FEF2F2] hover:bg-[#FEE2E2] text-[#881337] border border-[#FECDD3] flex items-center gap-2 transition cursor-pointer shrink-0"
       >
         <IconShieldCheck class="w-4 h-4" :stroke-width="2" />
         <span>Журнал аудиту</span>
@@ -244,7 +254,7 @@ const navLinks = computed(() => {
           class="w-full px-3 py-2 mt-4 bg-[#FAF8F5] border border-[#E7E5E4] rounded-lg text-xs"
         />
         <div class="flex justify-end gap-2 mt-4">
-          <button @click="showNewWsModal = false" class="px-3 py-1.5 bg-[#F5F5F4] rounded-lg text-xs font-bold cursor-pointer">Скасувати</button>
+          <button @click="showNewWsModal = false" class="px-3.5 py-1.5 bg-[#F5F5F4] rounded-lg text-xs font-bold cursor-pointer">Скасувати</button>
           <button @click="createWorkspace" :disabled="isCreatingWs" class="px-4 py-1.5 bg-[#881337] hover:bg-[#9F1239] text-white rounded-lg text-xs font-bold cursor-pointer disabled:opacity-50">
             {{ isCreatingWs ? "Створення..." : "Створити" }}
           </button>

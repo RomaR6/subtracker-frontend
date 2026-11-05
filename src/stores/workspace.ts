@@ -4,14 +4,36 @@ import { useAuthStore } from "./auth";
 import type { Workspace, WorkspaceMember, UserRole } from "../types";
 
 export const useWorkspaceStore = defineStore("workspace", {
-  state: () => ({
-    workspaces: [] as Workspace[],
-    currentWorkspace: null as Workspace | null,
-    members: [] as WorkspaceMember[],
-    usdRate: 41.52,
-    eurRate: 45.10,
-    isLoading: false
-  }),
+  state: () => {
+    let cachedWs: Workspace | null = null;
+    try {
+      const stored = localStorage.getItem("subtracker_current_ws");
+      if (stored) {
+        cachedWs = JSON.parse(stored);
+      }
+    } catch (e) {
+      cachedWs = null;
+    }
+
+    let initialUsd = 41.52;
+    try {
+      const storedRate = localStorage.getItem("subtracker_usd_rate");
+      if (storedRate) {
+        initialUsd = Number(storedRate) || 41.52;
+      }
+    } catch (e) {
+      initialUsd = 41.52;
+    }
+
+    return {
+      workspaces: [] as Workspace[],
+      currentWorkspace: cachedWs as Workspace | null,
+      members: [] as WorkspaceMember[],
+      usdRate: initialUsd,
+      eurRate: 45.10,
+      isLoading: false
+    };
+  },
 
   actions: {
     async fetchWorkspaces() {
@@ -19,11 +41,23 @@ export const useWorkspaceStore = defineStore("workspace", {
       try {
         const res = await api.get<Workspace[]>("/workspaces/");
         this.workspaces = res.data;
-        if (res.data.length > 0 && !this.currentWorkspace) {
-          this.currentWorkspace = res.data[0];
+
+        if (res.data.length > 0) {
+          if (!this.currentWorkspace) {
+            this.selectWorkspace(res.data[0]);
+          } else {
+            const exists = res.data.find((w) => w.id === this.currentWorkspace?.id);
+            if (exists) {
+              this.currentWorkspace = exists;
+              localStorage.setItem("subtracker_current_ws", JSON.stringify(exists));
+            } else {
+              this.selectWorkspace(res.data[0]);
+            }
+          }
         }
+
         if (this.currentWorkspace) {
-          await this.syncCurrentUserRole(this.currentWorkspace.id);
+          this.syncCurrentUserRole(this.currentWorkspace.id);
         }
       } catch (err) {
         console.error(err);
@@ -64,11 +98,22 @@ export const useWorkspaceStore = defineStore("workspace", {
     },
 
     async fetchRates() {
+      const cachedRate = localStorage.getItem("subtracker_usd_rate");
+      const cachedTime = localStorage.getItem("subtracker_usd_rate_time");
+
+      if (cachedRate && cachedTime && Date.now() - Number(cachedTime) < 4 * 60 * 60 * 1000) {
+        this.usdRate = Number(cachedRate);
+        return;
+      }
+
       try {
         const res = await api.get("/currencies/");
         if (res.data?.active_rates) {
-          this.usdRate = res.data.active_rates.USD || 41.52;
+          const usd = res.data.active_rates.USD || 41.52;
+          this.usdRate = usd;
           this.eurRate = res.data.active_rates.EUR || 45.10;
+          localStorage.setItem("subtracker_usd_rate", String(usd));
+          localStorage.setItem("subtracker_usd_rate_time", String(Date.now()));
         }
       } catch (err) {
         console.warn(this.usdRate);
@@ -77,6 +122,7 @@ export const useWorkspaceStore = defineStore("workspace", {
 
     async selectWorkspace(ws: Workspace) {
       this.currentWorkspace = ws;
+      localStorage.setItem("subtracker_current_ws", JSON.stringify(ws));
       await this.syncCurrentUserRole(ws.id);
     }
   }

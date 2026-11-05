@@ -1,6 +1,6 @@
 ﻿<script setup lang="ts">
-import { ref, onMounted } from "vue";
-import { IconPlus, IconX, IconCheck } from "@tabler/icons-vue";
+import { ref, computed, onMounted, watch } from "vue";
+import { IconPlus, IconX, IconCheck, IconChevronLeft, IconChevronRight } from "@tabler/icons-vue";
 import api from "../api/axios";
 import { useAuthStore } from "../stores/auth";
 import { useWorkspaceStore } from "../stores/workspace";
@@ -8,13 +8,26 @@ import { useWorkspaceStore } from "../stores/workspace";
 const authStore = useAuthStore();
 const wsStore = useWorkspaceStore();
 
-const requests = ref<any[]>([]);
-const isLoading = ref(true);
+const getCachedRequests = () => {
+  try {
+    const cached = localStorage.getItem("subtracker_requests_cache");
+    return cached ? JSON.parse(cached) : [];
+  } catch {
+    return [];
+  }
+};
+
+const cachedRequests = getCachedRequests();
+const requests = ref<any[]>(cachedRequests);
+const isLoading = ref(cachedRequests.length === 0);
 const showCreateModal = ref(false);
 const reviewModalItem = ref<any | null>(null);
 const reviewComment = ref("");
 const reviewError = ref("");
 const isReviewing = ref(false);
+
+const currentPage = ref(1);
+const itemsPerPage = ref(12);
 
 const form = ref({
   software_name: "",
@@ -24,11 +37,13 @@ const form = ref({
 });
 
 const fetchRequests = async () => {
-  isLoading.value = true;
+  const wsId = wsStore.currentWorkspace?.id || 1;
   try {
-    const wsId = wsStore.currentWorkspace?.id || 1;
     const res = await api.get(`/requests/?workspace_id=${wsId}`);
-    requests.value = res.data;
+    if (Array.isArray(res.data)) {
+      requests.value = res.data;
+      localStorage.setItem("subtracker_requests_cache", JSON.stringify(res.data));
+    }
   } catch (err) {
     console.error(err);
   } finally {
@@ -36,11 +51,25 @@ const fetchRequests = async () => {
   }
 };
 
-onMounted(async () => {
-  if (!wsStore.currentWorkspace) {
-    await wsStore.fetchWorkspaces();
+watch(() => wsStore.currentWorkspace?.id, () => {
+  currentPage.value = 1;
+  fetchRequests();
+});
+
+onMounted(() => {
+  fetchRequests();
+  if (wsStore.workspaces.length === 0) {
+    wsStore.fetchWorkspaces();
   }
-  await fetchRequests();
+});
+
+const totalPages = computed(() => {
+  return Math.ceil(requests.value.length / itemsPerPage.value) || 1;
+});
+
+const paginatedRequests = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  return requests.value.slice(start, start + itemsPerPage.value);
 });
 
 const submitRequest = async () => {
@@ -111,7 +140,7 @@ const handleReview = async (decision: "Approved" | "Rejected") => {
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <div
-        v-for="req in requests"
+        v-for="req in paginatedRequests"
         :key="req.id"
         class="bg-white border border-[#E7E5E4] p-5 rounded-2xl shadow-xs flex flex-col justify-between"
       >
@@ -157,6 +186,30 @@ const handleReview = async (decision: "Approved" | "Rejected") => {
             Розглянути заявку
           </button>
         </div>
+      </div>
+    </div>
+
+    <div class="p-4 bg-white border border-[#E7E5E4] rounded-2xl flex items-center justify-between text-xs shadow-xs">
+      <span class="text-[#78716C]">
+        Сторінка <strong class="text-[#1e293b]">{{ currentPage }}</strong> з <strong class="text-[#1e293b]">{{ totalPages }}</strong> (усього {{ requests.length }} заявок)
+      </span>
+      <div class="flex items-center gap-1.5">
+        <button
+          @click="currentPage = Math.max(1, currentPage - 1)"
+          :disabled="currentPage === 1"
+          class="px-3 py-1.5 bg-[#FAF8F5] border border-[#E7E5E4] rounded-lg font-bold text-[#44403C] hover:bg-[#F5F5F4] transition disabled:opacity-40 cursor-pointer flex items-center gap-1"
+        >
+          <IconChevronLeft class="w-3.5 h-3.5" :stroke-width="2.2" />
+          <span>Назад</span>
+        </button>
+        <button
+          @click="currentPage = Math.min(totalPages, currentPage + 1)"
+          :disabled="currentPage === totalPages"
+          class="px-3 py-1.5 bg-[#FAF8F5] border border-[#E7E5E4] rounded-lg font-bold text-[#44403C] hover:bg-[#F5F5F4] transition disabled:opacity-40 cursor-pointer flex items-center gap-1"
+        >
+          <span>Вперед</span>
+          <IconChevronRight class="w-3.5 h-3.5" :stroke-width="2.2" />
+        </button>
       </div>
     </div>
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useDialogStore } from "../stores/dialog";
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import {
   IconFileSpreadsheet,
   IconFileTypePdf,
@@ -8,7 +8,9 @@ import {
   IconPlus,
   IconRefresh,
   IconEdit,
-  IconTrash
+  IconTrash,
+  IconChevronLeft,
+  IconChevronRight
 } from "@tabler/icons-vue";
 import api from "../api/axios";
 import { useAuthStore } from "../stores/auth";
@@ -20,11 +22,24 @@ const dialog = useDialogStore();
 const wsStore = useWorkspaceStore();
 const authStore = useAuthStore();
 
-const subscriptions = ref<any[]>([]);
-const isLoading = ref(true);
+const getCachedSubs = () => {
+  try {
+    const cached = localStorage.getItem("subtracker_subs_cache");
+    return cached ? JSON.parse(cached) : [];
+  } catch {
+    return [];
+  }
+};
+
+const cachedSubs = getCachedSubs();
+const subscriptions = ref<any[]>(cachedSubs);
+const isLoading = ref(cachedSubs.length === 0);
 const searchQuery = ref("");
 const selectedCategory = ref("all");
 const selectedStatus = ref("all");
+
+const currentPage = ref(1);
+const itemsPerPage = ref(10);
 
 const showAddModal = ref(false);
 const showInvoiceModal = ref(false);
@@ -32,13 +47,15 @@ const editingItem = ref<any | null>(null);
 const renewingId = ref<number | null>(null);
 
 const fetchSubscriptions = async () => {
-  isLoading.value = true;
+  const wsId = wsStore.currentWorkspace?.id || 1;
   try {
-    const wsId = wsStore.currentWorkspace?.id || 1;
     const res = await api.get(`/subscriptions/?workspace_id=${wsId}`);
-    subscriptions.value = res.data;
+    if (Array.isArray(res.data)) {
+      subscriptions.value = res.data;
+      localStorage.setItem("subtracker_subs_cache", JSON.stringify(res.data));
+    }
   } catch (err) {
-    console.error("Не вдалося завантажити підписки:", err);
+    console.error(err);
   } finally {
     isLoading.value = false;
   }
@@ -50,17 +67,26 @@ const markAsRenewed = async (sub: any) => {
     await api.post(`/subscriptions/item/${sub.id}/renew`);
     await fetchSubscriptions();
   } catch (err) {
-    console.error("Помилка пролонгації:", err);
+    console.error(err);
   } finally {
     renewingId.value = null;
   }
 };
 
-onMounted(async () => {
-  if (!wsStore.currentWorkspace) {
-    await wsStore.fetchWorkspaces();
+watch(() => wsStore.currentWorkspace?.id, () => {
+  currentPage.value = 1;
+  fetchSubscriptions();
+});
+
+watch([searchQuery, selectedCategory, selectedStatus], () => {
+  currentPage.value = 1;
+});
+
+onMounted(() => {
+  fetchSubscriptions();
+  if (wsStore.workspaces.length === 0) {
+    wsStore.fetchWorkspaces();
   }
-  await fetchSubscriptions();
 });
 
 const filteredSubscriptions = computed(() => {
@@ -76,6 +102,15 @@ const filteredSubscriptions = computed(() => {
   });
 });
 
+const totalPages = computed(() => {
+  return Math.ceil(filteredSubscriptions.value.length / itemsPerPage.value) || 1;
+});
+
+const paginatedSubscriptions = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  return filteredSubscriptions.value.slice(start, start + itemsPerPage.value);
+});
+
 const openEditModal = (item: any) => {
   if (!authStore.isAdminOrManager) return;
   editingItem.value = item;
@@ -88,7 +123,7 @@ const toggleStatus = async (item: any) => {
     await api.patch(`/subscriptions/item/${item.id}/toggle-status`);
     await fetchSubscriptions();
   } catch (err) {
-    console.error("Не вдалося перемкнути статус:", err);
+    console.error(err);
   }
 };
 
@@ -106,8 +141,9 @@ const deleteSubscription = async (id: number) => {
   try {
     await api.delete(`/subscriptions/item/${id}`);
     subscriptions.value = subscriptions.value.filter((s) => s.id !== id);
+    localStorage.setItem("subtracker_subs_cache", JSON.stringify(subscriptions.value));
   } catch (err) {
-    console.error("Помилка видалення:", err);
+    console.error(err);
   }
 };
 
@@ -213,7 +249,7 @@ const exportPdf = () => {
           </tr>
         </thead>
         <tbody class="divide-y divide-[#E7E5E4]">
-          <tr v-for="item in filteredSubscriptions" :key="item.id" class="hover:bg-[#FAF8F5]/80 transition">
+          <tr v-for="item in paginatedSubscriptions" :key="item.id" class="hover:bg-[#FAF8F5]/80 transition">
             <td class="py-3 px-4">
               <div class="flex items-center gap-2.5">
                 <div class="w-7 h-7 rounded-lg bg-white border border-[#E7E5E4] flex items-center justify-center overflow-hidden shrink-0">
@@ -313,6 +349,30 @@ const exportPdf = () => {
           </tr>
         </tbody>
       </table>
+
+      <div class="px-4 py-3 bg-[#FAF8F5] border-t border-[#E7E5E4] flex items-center justify-between text-xs">
+        <span class="text-[#78716C]">
+          Сторінка <strong class="text-[#1e293b]">{{ currentPage }}</strong> з <strong class="text-[#1e293b]">{{ totalPages }}</strong> (усього {{ filteredSubscriptions.length }} записів)
+        </span>
+        <div class="flex items-center gap-1.5">
+          <button
+            @click="currentPage = Math.max(1, currentPage - 1)"
+            :disabled="currentPage === 1"
+            class="px-3 py-1.5 bg-white border border-[#E7E5E4] rounded-lg font-bold text-[#44403C] hover:bg-[#F5F5F4] transition disabled:opacity-40 cursor-pointer flex items-center gap-1"
+          >
+            <IconChevronLeft class="w-3.5 h-3.5" :stroke-width="2.2" />
+            <span>Назад</span>
+          </button>
+          <button
+            @click="currentPage = Math.min(totalPages, currentPage + 1)"
+            :disabled="currentPage === totalPages"
+            class="px-3 py-1.5 bg-white border border-[#E7E5E4] rounded-lg font-bold text-[#44403C] hover:bg-[#F5F5F4] transition disabled:opacity-40 cursor-pointer flex items-center gap-1"
+          >
+            <span>Вперед</span>
+            <IconChevronRight class="w-3.5 h-3.5" :stroke-width="2.2" />
+          </button>
+        </div>
+      </div>
     </div>
 
     <SubscriptionModal
