@@ -46,13 +46,13 @@ const categories = ref<string[]>(getCachedCategories());
 const fetchCategories = async () => {
   const wsId = wsStore.currentWorkspace?.id || 1;
   try {
-    const res = await api.get("/categories/", { params: { workspace_id: wsId } });
+    const res = await api.get("/subscriptions/categories", { params: { workspace_id: wsId } });
     if (Array.isArray(res.data) && res.data.length > 0) {
       categories.value = res.data.map((c: any) => typeof c === "string" ? c : (c.name || c.title));
       localStorage.setItem("subtracker_categories_cache", JSON.stringify(categories.value));
     }
   } catch (err) {
-    console.error(err);
+    console.error("Помилка завантаження категорій:", err);
   }
 };
 
@@ -89,7 +89,7 @@ const fetchSubscriptions = async () => {
       localStorage.setItem("subtracker_subs_cache", JSON.stringify(res.data));
     }
   } catch (err) {
-    console.error(err);
+    console.error("Помилка завантаження підписок:", err);
   } finally {
     isLoading.value = false;
   }
@@ -185,12 +185,14 @@ const deleteSubscription = async (id: number) => {
 
 const exportCsv = () => {
   const wsId = wsStore.currentWorkspace?.id || 1;
-  window.open(`http://localhost:8000/api/v1/analytics/export/csv?workspace_id=${wsId}`, "_blank");
+  const base = api.defaults.baseURL || "http://localhost:8000/api/v1";
+  window.open(`${base}/analytics/export/csv?workspace_id=${wsId}`, "_blank");
 };
 
 const exportPdf = () => {
   const wsId = wsStore.currentWorkspace?.id || 1;
-  window.open(`http://localhost:8000/api/v1/analytics/export/pdf?workspace_id=${wsId}`, "_blank");
+  const base = api.defaults.baseURL || "http://localhost:8000/api/v1";
+  window.open(`${base}/analytics/export/pdf?workspace_id=${wsId}`, "_blank");
 };
 </script>
 
