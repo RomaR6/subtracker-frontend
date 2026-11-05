@@ -144,7 +144,7 @@ const exportAllAuditJson = () => {
   <div class="space-y-6 text-left">
     <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
       <div>
-        <h1 class="text-2xl font-black text-[#1e293b] tracking-tight">
+        <h1 class="text-xl sm:text-2xl font-black text-[#1e293b] tracking-tight">
           Журнал безпеки та аудиту (AuditLog)
         </h1>
         <p class="text-xs text-[#78716C] mt-1">
@@ -154,7 +154,7 @@ const exportAllAuditJson = () => {
         </p>
       </div>
 
-      <div class="flex items-center gap-3">
+      <div class="flex flex-wrap items-center gap-2 sm:gap-3">
         <button
           v-if="logs.length > 0"
           @click="exportAllAuditJson"
@@ -167,7 +167,7 @@ const exportAllAuditJson = () => {
         <router-link
           v-if="isSuperadmin"
           to="/app/admin/workspaces"
-          class="text-xs font-bold text-[#881337] hover:underline flex items-center gap-1"
+          class="text-xs font-bold text-[#881337] hover:underline flex items-center gap-1 py-1"
         >
           <IconArrowLeft class="w-3.5 h-3.5" :stroke-width="2.5" />
           <span>До реєстру організацій</span>
@@ -176,58 +176,60 @@ const exportAllAuditJson = () => {
     </div>
 
     <div class="bg-white border border-[#E7E5E4] rounded-2xl shadow-xs overflow-hidden">
-      <table class="w-full text-left text-xs border-collapse">
-        <thead>
-          <tr class="bg-[#FAF8F5] border-b border-[#E7E5E4] text-[#78716C] font-bold">
-            <th class="py-3 px-4">Час</th>
-            <th class="py-3 px-4">Користувач</th>
-            <th class="py-3 px-4">Дія</th>
-            <th class="py-3 px-4">Зміст операції</th>
-            <th class="py-3 px-4 text-right">Файл</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-[#E7E5E4]">
-          <tr v-for="log in paginatedLogs" :key="log.id" class="hover:bg-[#FAF8F5]/80 transition">
-            <td class="py-3 px-4 text-[#78716C] font-mono whitespace-nowrap">
-              {{ new Date(log.timestamp).toLocaleString('uk-UA') }}
-            </td>
-            <td class="py-3 px-4 font-bold text-[#1e293b]">
-              {{ log.user_email || 'System' }}
-            </td>
-            <td class="py-3 px-4">
-              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#FEF2F2] text-[#881337] border border-[#FECDD3]">
-                {{ log.action }}
-              </span>
-            </td>
-            <td class="py-3 px-4 text-[#1e293b]">
-              <span class="font-medium text-xs leading-relaxed block">
-                {{ formatLogDetails(log.action, log.details) }}
-              </span>
-            </td>
-            <td class="py-3 px-4 text-right">
-              <button
-                @click="downloadSingleLogJson(log)"
-                title="Завантажити повний JSON зліпок події"
-                class="px-2.5 py-1 bg-[#FAF8F5] hover:bg-[#FEF2F2] hover:text-[#881337] hover:border-[#FECDD3] text-[#78716C] border border-[#E7E5E4] rounded-lg text-[10px] font-mono font-bold transition cursor-pointer inline-flex items-center gap-1 shadow-2xs"
-              >
-                <span>JSON</span>
-                <IconDownload class="w-3 h-3" :stroke-width="2.2" />
-              </button>
-            </td>
-          </tr>
-          <tr v-if="logs.length === 0">
-            <td colspan="5" class="py-12 text-center text-xs text-[#78716C]">
-              Поки що немає зафіксованих подій аудиту для цього простору.
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs border-collapse min-w-[700px]">
+          <thead>
+            <tr class="bg-[#FAF8F5] border-b border-[#E7E5E4] text-[#78716C] font-bold">
+              <th class="py-3 px-4 w-36 whitespace-nowrap">Час</th>
+              <th class="py-3 px-4 w-44 whitespace-nowrap">Користувач</th>
+              <th class="py-3 px-4 w-40 whitespace-nowrap">Дія</th>
+              <th class="py-3 px-4 min-w-[280px]">Зміст операції</th>
+              <th class="py-3 px-4 text-right w-24 whitespace-nowrap">Файл</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[#E7E5E4]">
+            <tr v-for="log in paginatedLogs" :key="log.id" class="hover:bg-[#FAF8F5]/80 transition">
+              <td class="py-3 px-4 text-[#78716C] font-mono whitespace-nowrap align-top">
+                {{ new Date(log.timestamp).toLocaleString('uk-UA') }}
+              </td>
+              <td class="py-3 px-4 font-bold text-[#1e293b] whitespace-nowrap align-top">
+                {{ log.user_email || 'System' }}
+              </td>
+              <td class="py-3 px-4 whitespace-nowrap align-top">
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#FEF2F2] text-[#881337] border border-[#FECDD3]">
+                  {{ log.action }}
+                </span>
+              </td>
+              <td class="py-3 px-4 text-[#1e293b] align-top">
+                <span class="font-medium text-xs leading-relaxed block break-all whitespace-pre-wrap">
+                  {{ formatLogDetails(log.action, log.details) }}
+                </span>
+              </td>
+              <td class="py-3 px-4 text-right whitespace-nowrap align-top">
+                <button
+                  @click="downloadSingleLogJson(log)"
+                  title="Завантажити повний JSON зліпок події"
+                  class="px-2.5 py-1 bg-[#FAF8F5] hover:bg-[#FEF2F2] hover:text-[#881337] hover:border-[#FECDD3] text-[#78716C] border border-[#E7E5E4] rounded-lg text-[10px] font-mono font-bold transition cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                >
+                  <span>JSON</span>
+                  <IconDownload class="w-3 h-3" :stroke-width="2.2" />
+                </button>
+              </td>
+            </tr>
+            <tr v-if="logs.length === 0">
+              <td colspan="5" class="py-12 text-center text-xs text-[#78716C]">
+                Поки що немає зафіксованих подій аудиту для цього простору.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-      <div v-if="totalPages > 1" class="px-4 py-3 bg-[#FAF8F5] border-t border-[#E7E5E4] flex items-center justify-between text-xs">
+      <div class="px-4 py-3 bg-[#FAF8F5] border-t border-[#E7E5E4] flex flex-col sm:flex-row gap-2.5 sm:items-center justify-between text-xs">
         <span class="text-[#78716C]">
           Сторінка <strong class="text-[#1e293b]">{{ currentPage }}</strong> з <strong class="text-[#1e293b]">{{ totalPages }}</strong> (усього {{ logs.length }} подій)
         </span>
-        <div class="flex items-center gap-1.5">
+        <div class="flex items-center gap-1.5 self-end sm:self-auto">
           <button
             @click="currentPage = Math.max(1, currentPage - 1)"
             :disabled="currentPage === 1"

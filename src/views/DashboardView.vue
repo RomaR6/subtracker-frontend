@@ -64,7 +64,7 @@ onMounted(() => {
   <div class="space-y-6">
     <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
       <div class="text-left">
-        <h1 class="text-2xl font-black text-[#1e293b] tracking-tight">
+        <h1 class="text-xl sm:text-2xl font-black text-[#1e293b] tracking-tight">
           Зведена аналітика та фінансовий моніторинг
         </h1>
         <p class="text-xs text-[#78716C] mt-1">
@@ -163,7 +163,7 @@ onMounted(() => {
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-      <div class="lg:col-span-8 bg-white border border-[#E7E5E4] p-6 rounded-2xl shadow-xs text-left">
+      <div class="lg:col-span-8 bg-white border border-[#E7E5E4] p-4 sm:p-6 rounded-2xl shadow-xs text-left">
         <div class="flex items-center justify-between mb-4">
           <div>
             <h3 class="font-bold text-sm text-[#1e293b]">Динаміка витрат та прогноз (Cash Flow)</h3>
@@ -180,7 +180,7 @@ onMounted(() => {
         />
       </div>
 
-      <div class="lg:col-span-4 bg-white border border-[#E7E5E4] p-6 rounded-2xl shadow-xs text-left">
+      <div class="lg:col-span-4 bg-white border border-[#E7E5E4] p-4 sm:p-6 rounded-2xl shadow-xs text-left">
         <div class="flex items-center justify-between mb-4">
           <h3 class="font-bold text-sm text-[#1e293b]">Найближчі списання</h3>
           <span class="text-[10px] bg-[#FEF2F2] text-[#881337] border border-[#FECDD3] px-2 py-0.5 rounded font-bold">
@@ -195,7 +195,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <div class="mt-8 bg-white border border-[#E7E5E4] rounded-2xl p-6 shadow-xs text-left">
+    <div class="mt-8 bg-white border border-[#E7E5E4] rounded-2xl p-4 sm:p-6 shadow-xs text-left">
       <div class="flex items-center justify-between mb-4">
         <div>
           <h3 class="font-black text-sm text-[#1e293b]">Ключові цифрові активи за обсягом витрат</h3>
@@ -208,7 +208,7 @@ onMounted(() => {
       </div>
 
       <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs">
+        <table class="w-full text-left text-xs min-w-[600px]">
           <thead>
             <tr class="border-b border-[#E7E5E4] text-[#78716C] font-bold pb-2">
               <th class="py-2.5 px-3">Сервіс</th>
