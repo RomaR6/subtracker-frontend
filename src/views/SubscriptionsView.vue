@@ -22,6 +22,40 @@ const dialog = useDialogStore();
 const wsStore = useWorkspaceStore();
 const authStore = useAuthStore();
 
+const defaultCategories = [
+  "DevTools",
+  "DevOps & Cloud",
+  "Design",
+  "AI / DevTools",
+  "Комунікація",
+  "Analytics",
+  "Coding"
+];
+
+const getCachedCategories = () => {
+  try {
+    const cached = localStorage.getItem("subtracker_categories_cache");
+    return cached ? JSON.parse(cached) : defaultCategories;
+  } catch {
+    return defaultCategories;
+  }
+};
+
+const categories = ref<string[]>(getCachedCategories());
+
+const fetchCategories = async () => {
+  const wsId = wsStore.currentWorkspace?.id || 1;
+  try {
+    const res = await api.get("/categories/", { params: { workspace_id: wsId } });
+    if (Array.isArray(res.data) && res.data.length > 0) {
+      categories.value = res.data.map((c: any) => typeof c === "string" ? c : (c.name || c.title));
+      localStorage.setItem("subtracker_categories_cache", JSON.stringify(categories.value));
+    }
+  } catch (err) {
+    console.error(err);
+  }
+};
+
 const getCachedSubs = () => {
   try {
     const cached = localStorage.getItem("subtracker_subs_cache");
@@ -76,6 +110,7 @@ const markAsRenewed = async (sub: any) => {
 watch(() => wsStore.currentWorkspace?.id, () => {
   currentPage.value = 1;
   fetchSubscriptions();
+  fetchCategories();
 });
 
 watch([searchQuery, selectedCategory, selectedStatus], () => {
@@ -84,6 +119,7 @@ watch([searchQuery, selectedCategory, selectedStatus], () => {
 
 onMounted(() => {
   fetchSubscriptions();
+  fetchCategories();
   if (wsStore.workspaces.length === 0) {
     wsStore.fetchWorkspaces();
   }
@@ -218,10 +254,9 @@ const exportPdf = () => {
       <div>
         <select v-model="selectedCategory" class="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E7E5E4] rounded-lg text-xs text-[#44403C]">
           <option value="all">Усі категорії</option>
-          <option value="DevTools">DevTools</option>
-          <option value="DevOps & Cloud">DevOps & Cloud</option>
-          <option value="Design">Design</option>
-          <option value="Комунікація">Комунікація</option>
+          <option v-for="cat in categories" :key="cat" :value="cat">
+            {{ cat }}
+          </option>
         </select>
       </div>
 

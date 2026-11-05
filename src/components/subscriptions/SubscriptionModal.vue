@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, watch, onMounted } from "vue";
 import { IconX } from "@tabler/icons-vue";
 import api from "../../api/axios";
 
@@ -12,6 +12,51 @@ const props = defineProps<{
 const emit = defineEmits(["close", "saved"]);
 
 const todayDate = new Date().toISOString().split("T")[0];
+
+const defaultCategories = [
+  "DevTools",
+  "DevOps & Cloud",
+  "Design",
+  "AI / DevTools",
+  "Комунікація",
+  "Analytics",
+  "Coding"
+];
+
+const getCachedCategories = () => {
+  try {
+    const cached = localStorage.getItem("subtracker_categories_cache");
+    return cached ? JSON.parse(cached) : defaultCategories;
+  } catch {
+    return defaultCategories;
+  }
+};
+
+const categories = ref<string[]>(getCachedCategories());
+
+const fetchCategories = async () => {
+  try {
+    const res = await api.get("/categories/", {
+      params: { workspace_id: props.workspaceId || 1 }
+    });
+    if (Array.isArray(res.data) && res.data.length > 0) {
+      categories.value = res.data.map((c: any) => typeof c === "string" ? c : (c.name || c.title));
+      localStorage.setItem("subtracker_categories_cache", JSON.stringify(categories.value));
+    }
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+onMounted(() => {
+  fetchCategories();
+});
+
+watch(() => props.show, (val) => {
+  if (val) {
+    fetchCategories();
+  }
+});
 
 const form = ref({
   name: "",
@@ -36,7 +81,7 @@ watch(
       form.value = {
         name: val.name,
         domain: val.domain || "",
-        category: val.category || "DevTools",
+        category: val.category || categories.value[0] || "DevTools",
         owner_name: val.owner_name || "Роман Олексюк",
         billing_period: val.billing_period || "monthly",
         currency_code: val.currency_code || "USD",
@@ -49,7 +94,7 @@ watch(
       form.value = {
         name: "",
         domain: "",
-        category: "DevTools",
+        category: categories.value[0] || "DevTools",
         owner_name: "Роман Олексюк",
         billing_period: "monthly",
         currency_code: "USD",
@@ -100,8 +145,8 @@ const handleSubmit = async () => {
 </script>
 
 <template>
-  <div v-if="show" class="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-    <div class="bg-white border border-[#E7E5E4] rounded-2xl max-w-lg w-full p-6 shadow-2xl text-left">
+  <div v-if="show" class="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 z-50">
+    <div class="bg-white border border-[#E7E5E4] rounded-2xl max-w-lg w-full p-4 sm:p-6 shadow-2xl text-left max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center pb-3 border-b border-[#E7E5E4]">
         <h3 class="font-bold text-base text-[#1e293b]">
           {{ editItem ? "Редагування підписки" : "Додати нову підписку" }}
@@ -116,7 +161,7 @@ const handleSubmit = async () => {
       </div>
 
       <form @submit.prevent="handleSubmit" class="mt-4 space-y-3.5 text-xs">
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label class="block font-bold text-[#44403C] mb-1">Назва сервісу *</label>
             <input v-model="form.name" required placeholder="GitHub Enterprise" class="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E7E5E4] rounded-lg text-xs" />
@@ -127,15 +172,13 @@ const handleSubmit = async () => {
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label class="block font-bold text-[#44403C] mb-1">Категорія</label>
             <select v-model="form.category" class="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E7E5E4] rounded-lg text-xs">
-              <option value="DevTools">DevTools (Розробка)</option>
-              <option value="Infrastructure">Infrastructure (Хмара)</option>
-              <option value="Design">Design (UI/UX)</option>
-              <option value="Communication">Communication (Комунікації)</option>
-              <option value="Management">Management (Управління)</option>
+              <option v-for="cat in categories" :key="cat" :value="cat">
+                {{ cat }}
+              </option>
             </select>
           </div>
           <div>
@@ -144,7 +187,7 @@ const handleSubmit = async () => {
           </div>
         </div>
 
-        <div class="grid grid-cols-3 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <label class="block font-bold text-[#44403C] mb-1">Вартість (USD) *</label>
             <input v-model.number="form.cost_usd" type="number" step="0.01" min="0.01" required class="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E7E5E4] rounded-lg text-xs" />

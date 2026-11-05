@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import { useDialogStore } from "../stores/dialog";
 import { ref, computed, onMounted, watch } from "vue";
-import { IconArrowRight, IconCheck, IconTag, IconBrandTelegram } from "@tabler/icons-vue";
+import { IconArrowRight, IconCheck, IconTag, IconBrandTelegram, IconTrash } from "@tabler/icons-vue";
 import api from "../api/axios";
 import { useAuthStore } from "../stores/auth";
 import { useWorkspaceStore } from "../stores/workspace";
 
+const dialog = useDialogStore();
 const wsStore = useWorkspaceStore();
 const authStore = useAuthStore();
 
@@ -31,7 +33,9 @@ const fetchSettings = async () => {
     const res = await api.get(`/workspaces/${currentWsId.value}/webhooks`);
     webhookUrl.value = res.data?.webhook_url || "";
 
-    const catRes = await api.get("/subscriptions/categories");
+    const catRes = await api.get("/subscriptions/categories", {
+      params: { workspace_id: currentWsId.value }
+    });
     categories.value = catRes.data;
   } catch (err) {
     console.error("Помилка завантаження налаштувань простору:", err);
@@ -126,12 +130,38 @@ const sendTelegramReminders = async () => {
 const addCategory = async () => {
   if (!authStore.isAdminOrManager || !newCategoryName.value.trim()) return;
   try {
-    await api.post("/subscriptions/categories", { name: newCategoryName.value.trim() });
+    await api.post("/subscriptions/categories", {
+      name: newCategoryName.value.trim(),
+      workspace_id: currentWsId.value
+    });
     newCategoryName.value = "";
-    const catRes = await api.get("/subscriptions/categories");
+    const catRes = await api.get("/subscriptions/categories", {
+      params: { workspace_id: currentWsId.value }
+    });
     categories.value = catRes.data;
-  } catch (err) {
-    console.error(err);
+    localStorage.removeItem("subtracker_categories_cache");
+  } catch (err: any) {
+    dialog.alert(err.response?.data?.detail || "Помилка при створенні категорії.");
+  }
+};
+
+const deleteCategory = async (cat: any) => {
+  if (!authStore.isAdminOrManager) return;
+  const confirmed = await dialog.confirm({
+    title: "Видалення категорії",
+    message: `Ви дійсно бажаєте видалити категорію «${cat.name}» зі списку активів?`,
+    confirmText: "Видалити",
+    cancelText: "Скасувати",
+    isDanger: true
+  });
+  if (!confirmed) return;
+
+  try {
+    await api.delete(`/subscriptions/categories/${cat.id}`);
+    categories.value = categories.value.filter(c => c.id !== cat.id);
+    localStorage.removeItem("subtracker_categories_cache");
+  } catch (err: any) {
+    dialog.alert(err.response?.data?.detail || "Не вдалося видалити категорію.");
   }
 };
 </script>
@@ -139,7 +169,7 @@ const addCategory = async () => {
 <template>
   <div class="space-y-6 text-left">
     <div>
-      <h1 class="text-2xl font-black text-[#1e293b] tracking-tight">Налаштування робочого простору</h1>
+      <h1 class="text-xl sm:text-2xl font-black text-[#1e293b] tracking-tight">Налаштування робочого простору</h1>
       <p class="text-xs text-[#78716C] mt-1">
         Поточний простір: <span class="font-bold text-[#1e293b]">{{ currentWsName }}</span>. Керування корпоративними вебхуками, каналами сповіщень та класифікатором активів.
       </p>
@@ -151,7 +181,7 @@ const addCategory = async () => {
     </div>
 
     <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-      <div class="bg-white border border-[#E7E5E4] p-6 rounded-2xl shadow-xs space-y-4">
+      <div class="bg-white border border-[#E7E5E4] p-4 sm:p-6 rounded-2xl shadow-xs space-y-4">
         <div>
           <h3 class="font-bold text-sm text-[#1e293b]">Корпоративні Webhooks (Slack / Discord)</h3>
           <p class="text-xs text-[#78716C] mt-0.5">Канал сповіщень виключно для простору «{{ currentWsName }}»</p>
@@ -170,7 +200,7 @@ const addCategory = async () => {
           {{ webhookFeedback }}
         </div>
 
-        <div class="flex gap-2 pt-2">
+        <div class="flex flex-wrap gap-2 pt-2">
           <button
             @click="saveWebhook"
             :disabled="isSavingWebhook || !webhookUrl.trim()"
@@ -189,7 +219,7 @@ const addCategory = async () => {
         </div>
       </div>
 
-      <div class="bg-white border border-[#E7E5E4] p-6 rounded-2xl shadow-xs space-y-4">
+      <div class="bg-white border border-[#E7E5E4] p-4 sm:p-6 rounded-2xl shadow-xs space-y-4">
         <div class="flex items-center justify-between">
           <div>
             <h3 class="font-bold text-sm text-[#1e293b]">Telegram-сповіщення (Bot Alerts)</h3>
@@ -215,7 +245,7 @@ const addCategory = async () => {
             />
             <button
               @click="saveTelegramChatId"
-              class="px-4 py-2 bg-[#FAF8F5] border border-[#E7E5E4] hover:bg-[#E7E5E4] text-[#1e293b] rounded-lg text-xs font-bold cursor-pointer transition"
+              class="px-4 py-2 bg-[#FAF8F5] border border-[#E7E5E4] hover:bg-[#E7E5E4] text-[#1e293b] rounded-lg text-xs font-bold cursor-pointer transition shrink-0"
             >
               Зберегти
             </button>
@@ -242,7 +272,7 @@ const addCategory = async () => {
         </div>
       </div>
 
-      <div class="bg-white border border-[#E7E5E4] p-6 rounded-2xl shadow-xs space-y-4 lg:col-span-2">
+      <div class="bg-white border border-[#E7E5E4] p-4 sm:p-6 rounded-2xl shadow-xs space-y-4 lg:col-span-2">
         <h3 class="font-bold text-sm text-[#1e293b]">Категорії цифрових активів</h3>
         <p class="text-xs text-[#78716C]">Керування довідником категорій підписок для аналітики та звітів.</p>
 
@@ -256,7 +286,7 @@ const addCategory = async () => {
           <button
             @click="addCategory"
             :disabled="!newCategoryName.trim()"
-            class="px-4 py-2 bg-[#1e293b] hover:bg-[#334155] text-white rounded-lg text-xs font-bold cursor-pointer transition disabled:opacity-50"
+            class="px-4 py-2 bg-[#1e293b] hover:bg-[#334155] text-white rounded-lg text-xs font-bold cursor-pointer transition disabled:opacity-50 shrink-0"
           >
             Додати
           </button>
@@ -266,10 +296,18 @@ const addCategory = async () => {
           <span
             v-for="cat in categories"
             :key="cat.id"
-            class="px-3 py-1.5 bg-[#FAF8F5] border border-[#E7E5E4] rounded-xl text-xs font-semibold text-[#44403C] inline-flex items-center gap-1.5"
+            class="px-3 py-1.5 bg-[#FAF8F5] border border-[#E7E5E4] rounded-xl text-xs font-semibold text-[#44403C] inline-flex items-center gap-2 group hover:border-[#FECDD3] transition"
           >
             <IconTag class="w-3.5 h-3.5 text-[#881337]" :stroke-width="2" />
             <span>{{ cat.name }}</span>
+            <button
+              v-if="authStore.isAdminOrManager"
+              @click="deleteCategory(cat)"
+              title="Видалити категорію"
+              class="text-[#A8A29E] hover:text-[#DC2626] transition p-0.5 rounded cursor-pointer"
+            >
+              <IconTrash class="w-3.5 h-3.5" :stroke-width="2" />
+            </button>
           </span>
         </div>
       </div>
