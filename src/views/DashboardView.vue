@@ -1,7 +1,8 @@
 ﻿<script setup lang="ts">
 import { ref, onMounted, watch } from "vue";
 import { IconCurrencyHryvnia, IconCurrencyDollar, IconUser, IconArrowRight } from "@tabler/icons-vue";
-import api from "../api/axios";
+import { analyticsApi, type AnalyticsDashboardData } from "../api/analytics";
+import { subscriptionApi } from "../api/subscriptions";
 import { useWorkspaceStore } from "../stores/workspace";
 import CashFlowChart from "../components/dashboard/CashFlowChart.vue";
 import UpcomingPaymentsList from "../components/dashboard/UpcomingPaymentsList.vue";
@@ -9,36 +10,36 @@ import UpcomingPaymentsList from "../components/dashboard/UpcomingPaymentsList.v
 const wsStore = useWorkspaceStore();
 const activeCurrency = ref<"UAH" | "USD">("UAH");
 
-const getCachedDashboard = () => {
+const getCachedDashboard = (): AnalyticsDashboardData | null => {
   try {
     const cached = localStorage.getItem("subtracker_dashboard_cache");
     return cached ? JSON.parse(cached) : null;
-  } catch (e) {
+  } catch {
     return null;
   }
 };
 
 const cachedData = getCachedDashboard();
-const dashboardData = ref<any>(cachedData);
-const topSubscriptions = ref<any[]>(cachedData?.recent_subscriptions || []);
+const dashboardData = ref<AnalyticsDashboardData | null>(cachedData);
+const topSubscriptions = ref<any[]>([]);
 const isLoading = ref(!cachedData);
 
 const fetchDashboard = async () => {
   const wsId = wsStore.currentWorkspace?.id || 1;
   try {
-    const [dashRes, subsRes] = await Promise.allSettled([
-      api.get(`/analytics/dashboard?workspace_id=${wsId}`),
-      api.get(`/subscriptions/?workspace_id=${wsId}&limit=5`)
+    const [dashRes, subs] = await Promise.all([
+      analyticsApi.getDashboard(wsId).catch(() => null),
+      subscriptionApi.getAll({ workspace_id: wsId }).catch(() => [])
     ]);
 
-    if (dashRes.status === "fulfilled") {
-      dashboardData.value = dashRes.value.data;
-      localStorage.setItem("subtracker_dashboard_cache", JSON.stringify(dashRes.value.data));
+    if (dashRes) {
+      dashboardData.value = dashRes;
+      localStorage.setItem("subtracker_dashboard_cache", JSON.stringify(dashRes));
     }
 
-    if (subsRes.status === "fulfilled" && Array.isArray(subsRes.value.data)) {
-      topSubscriptions.value = [...subsRes.value.data]
-        .sort((a, b) => (Number(b.cost_usd || b.cost) || 0) - (Number(a.cost_usd || a.cost) || 0))
+    if (Array.isArray(subs)) {
+      topSubscriptions.value = [...subs]
+        .sort((a, b) => (Number(b.cost_usd) || 0) - (Number(a.cost_usd) || 0))
         .slice(0, 5);
     }
   } catch (err) {
@@ -222,18 +223,18 @@ onMounted(() => {
           <tbody class="divide-y divide-[#F5F5F4]">
             <tr v-for="sub in topSubscriptions" :key="sub.id" class="hover:bg-[#FAF8F5] transition">
               <td class="py-3 px-3 flex items-center gap-2.5 font-bold text-[#1e293b]">
-                <img :src="sub.logo_url || 'https://www.google.com/s2/favicons?domain=' + (sub.service_url || 'cloud.google.com') + '&sz=64'" class="w-7 h-7 rounded-lg border border-[#E7E5E4] p-0.5 object-contain" />
+                <img :src="sub.logo_url || 'https://www.google.com/s2/favicons?domain=' + (sub.domain || 'cloud.google.com') + '&sz=64'" class="w-7 h-7 rounded-lg border border-[#E7E5E4] p-0.5 object-contain" />
                 <div>
-                  <div>{{ sub.service_name }}</div>
-                  <div class="text-[10px] text-[#78716C] font-normal">{{ sub.service_url }}</div>
+                  <div>{{ sub.name }}</div>
+                  <div class="text-[10px] text-[#78716C] font-normal">{{ sub.domain }}</div>
                 </div>
               </td>
-              <td class="py-3 px-3 text-[#44403C]">{{ sub.category || sub.category_name || 'DevTools' }}</td>
-              <td class="py-3 px-3 text-[#44403C] font-medium">{{ sub.assigned_user || sub.assigned_user_name || 'Олександр Кравченко' }}</td>
+              <td class="py-3 px-3 text-[#44403C]">{{ sub.category || 'DevTools' }}</td>
+              <td class="py-3 px-3 text-[#44403C] font-medium">{{ sub.owner_name || 'Олександр Кравченко' }}</td>
               <td class="py-3 px-3 capitalize text-[#78716C]">{{ sub.billing_period }}</td>
               <td class="py-3 px-3 font-bold text-[#1e293b]">
-                <div>${{ Number(sub.cost_usd || sub.cost).toFixed(2) }}</div>
-                <div class="text-[10px] text-[#78716C] font-normal">₴{{ Math.round((Number(sub.cost_usd || sub.cost) || 0) * (wsStore.usdRate || 45.35)).toLocaleString('uk-UA') }}</div>
+                <div>${{ Number(sub.cost_usd).toFixed(2) }}</div>
+                <div class="text-[10px] text-[#78716C] font-normal">₴{{ Math.round(Number(sub.cost_uah || sub.cost_usd * (wsStore.usdRate || 45.35))).toLocaleString('uk-UA') }}</div>
               </td>
               <td class="py-3 px-3">
                 <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#ECFDF5] text-[#059669] border border-[#A7F3D0]">

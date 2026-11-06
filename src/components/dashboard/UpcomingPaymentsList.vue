@@ -1,39 +1,27 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref } from "vue";
 import { IconBrandTelegram, IconCheck, IconRefresh, IconArrowRight } from "@tabler/icons-vue";
-import api from "../../api/axios";
-
-interface UpcomingItem {
-  id: number;
-  name: string;
-  category: string;
-  domain?: string;
-  logo_url?: string;
-  cost_usd: number;
-  cost_uah: number;
-  next_billing_date: string;
-  days_left: number;
-}
+import { analyticsApi, type UpcomingPaymentItem } from "../../api/analytics";
 
 const props = defineProps<{
-  items: UpcomingItem[];
+  items: UpcomingPaymentItem[];
   currency: "UAH" | "USD";
 }>();
 
 const sendingId = ref<number | null>(null);
 const successMap = ref<Record<number, boolean>>({});
 
-const sendSingleTelegramAlert = async (item: UpcomingItem) => {
+const sendSingleTelegramAlert = async (item: UpcomingPaymentItem) => {
   sendingId.value = item.id;
   try {
     const chatId = localStorage.getItem("subtracker_tg_chat_id") || "1344321904";
-    await api.post(`/subscriptions/${item.id}/send-telegram?chat_id=${chatId}`);
+    await analyticsApi.sendTelegramAlert(item.id, chatId);
     successMap.value[item.id] = true;
     setTimeout(() => {
       successMap.value[item.id] = false;
     }, 3000);
   } catch (err) {
-    console.error("Не вдалося надіслати сповіщення в Telegram:", err);
+    console.error(err);
   } finally {
     sendingId.value = null;
   }

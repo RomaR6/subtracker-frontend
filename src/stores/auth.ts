@@ -1,6 +1,6 @@
-import { defineStore } from "pinia";
-import api from "../api/axios";
-import type { User, UserRole, TokenResponse } from "../types";
+﻿import { defineStore } from "pinia";
+import { authApi, type RegisterPayload, type GoogleAuthPayload } from "../api/auth";
+import type { User, UserRole } from "../types";
 
 export const useAuthStore = defineStore("auth", {
   state: () => ({
@@ -23,17 +23,19 @@ export const useAuthStore = defineStore("auth", {
   },
 
   actions: {
-    setToken(token: string) {
+    setSession(token: string, user: User) {
       this.token = token;
+      this.user = user;
       localStorage.setItem("subtracker_token", token);
+      localStorage.setItem("subtracker_user", JSON.stringify(user));
     },
 
     async fetchCurrentUser() {
       if (!this.token) return null;
       try {
-        const res = await api.get<User>("/auth/me");
-        this.user = res.data;
-        return res.data;
+        const user = await authApi.getMe();
+        this.user = user;
+        return user;
       } catch (err) {
         this.logout();
         return null;
@@ -44,9 +46,8 @@ export const useAuthStore = defineStore("auth", {
       this.isLoading = true;
       this.errorMessage = "";
       try {
-        const res = await api.post<TokenResponse>("/auth/login", { email, password });
-        this.setToken(res.data.access_token);
-        this.user = res.data.user;
+        const data = await authApi.login(email, password);
+        this.setSession(data.access_token, data.user);
         return true;
       } catch (err: any) {
         this.errorMessage = err.response?.data?.detail || "Помилка авторизації. Перевірте email та пароль.";
@@ -56,16 +57,32 @@ export const useAuthStore = defineStore("auth", {
       }
     },
 
-    async register(payload: { email: string; password: string; first_name?: string; last_name?: string; workspace_name?: string }): Promise<boolean> {
+    async register(payload: RegisterPayload): Promise<boolean> {
       this.isLoading = true;
       this.errorMessage = "";
       try {
-        const res = await api.post<TokenResponse>("/auth/register", payload);
-        this.setToken(res.data.access_token);
-        this.user = res.data.user;
+        const data = await authApi.register(payload);
+        this.setSession(data.access_token, data.user);
         return true;
       } catch (err: any) {
         this.errorMessage = err.response?.data?.detail || "Помилка реєстрації. Спробуйте інший email.";
+        return false;
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    async loginGoogle(payload: GoogleAuthPayload): Promise<boolean> {
+      this.isLoading = true;
+      this.errorMessage = "";
+      try {
+        const data = await authApi.googleAuth(payload);
+        this.setSession(data.access_token, data.user);
+        return true;
+      } catch (err: any) {
+        this.errorMessage = err.response?.data?.detail
+          ? JSON.stringify(err.response.data.detail)
+          : "Не вдалося авторизуватись через Google.";
         return false;
       } finally {
         this.isLoading = false;
@@ -76,6 +93,7 @@ export const useAuthStore = defineStore("auth", {
       this.token = null;
       this.user = null;
       localStorage.removeItem("subtracker_token");
+      localStorage.removeItem("subtracker_user");
       window.location.href = "/login";
     }
   }

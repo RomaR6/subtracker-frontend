@@ -3,8 +3,9 @@ import { useDialogStore } from "../stores/dialog";
 import { ref, onMounted, watch } from "vue";
 import { IconTrash, IconCheck, IconCopy } from "@tabler/icons-vue";
 import { useAuthStore } from "../stores/auth";
-import api from "../api/axios";
+import { workspaceApi } from "../api/workspaces";
 import { useWorkspaceStore } from "../stores/workspace";
+import type { UserRole } from "../types";
 
 const dialog = useDialogStore();
 const wsStore = useWorkspaceStore();
@@ -23,7 +24,7 @@ const cachedMembers = getCachedMembers();
 const members = ref<any[]>(cachedMembers);
 const isLoading = ref(cachedMembers.length === 0);
 const inviteEmail = ref("");
-const inviteRole = ref("Member");
+const inviteRole = ref<UserRole>("Member");
 const generatedInviteLink = ref("");
 const copySuccess = ref(false);
 const errorMsg = ref("");
@@ -31,10 +32,10 @@ const errorMsg = ref("");
 const fetchMembers = async () => {
   const wsId = wsStore.currentWorkspace?.id || 1;
   try {
-    const res = await api.get(`/workspaces/${wsId}/members`);
-    if (Array.isArray(res.data)) {
-      members.value = res.data;
-      localStorage.setItem("subtracker_team_cache", JSON.stringify(res.data));
+    const data = await workspaceApi.getMembers(wsId);
+    if (Array.isArray(data)) {
+      members.value = data;
+      localStorage.setItem("subtracker_team_cache", JSON.stringify(data));
     }
   } catch (err) {
     console.error(err);
@@ -76,13 +77,13 @@ const generateInvite = async () => {
   errorMsg.value = "";
   try {
     const wsId = wsStore.currentWorkspace?.id || 1;
-    const res = await api.post(`/workspaces/${wsId}/invites`, {
+    const res = await workspaceApi.createInvite(wsId, {
       email: inviteEmail.value.trim(),
       role_name: inviteRole.value
     });
 
-    const token = res.data?.invite_token || res.data?.token || res.data;
-    const tokenStr = typeof token === "object" ? (token.invite_token || token.token) : token;
+    const token = res.invite_token || res;
+    const tokenStr = typeof token === "object" ? (token as any).invite_token : token;
     generatedInviteLink.value = `${window.location.origin}/accept-invite?token=${tokenStr}`;
     inviteEmail.value = "";
     await fetchMembers();
@@ -102,7 +103,7 @@ const copyLink = () => {
 const handleRoleChange = async (member: any, newRole: string) => {
   try {
     const wsId = wsStore.currentWorkspace?.id || 1;
-    await api.patch(`/workspaces/${wsId}/members/${member.id}`, { role_name: newRole });
+    await workspaceApi.updateMemberRole(wsId, member.id, newRole as UserRole);
     member.role_name = newRole;
     await fetchMembers();
   } catch (err: any) {
@@ -123,7 +124,7 @@ const removeMember = async (member: any) => {
 
   try {
     const wsId = wsStore.currentWorkspace?.id || 1;
-    await api.delete(`/workspaces/${wsId}/members/${member.id}`);
+    await workspaceApi.removeMember(wsId, member.id);
     members.value = members.value.filter(m => m.id !== member.id);
     localStorage.setItem("subtracker_team_cache", JSON.stringify(members.value));
   } catch (err: any) {

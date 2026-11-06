@@ -1,7 +1,7 @@
 ﻿<script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { IconFileSpreadsheet, IconFileTypePdf } from "@tabler/icons-vue";
-import api from "../api/axios";
+import { analyticsApi, type FopCalculationResult } from "../api/analytics";
 import { useAuthStore } from "../stores/auth";
 import { useWorkspaceStore } from "../stores/workspace";
 
@@ -10,7 +10,7 @@ const authStore = useAuthStore();
 
 const netSalary = ref(65000);
 const customSoftwareCost = ref(3200);
-const calculationResult = ref<any>(null);
+const calculationResult = ref<FopCalculationResult | null>(null);
 const isCalculating = ref(false);
 
 const calculateFop = async () => {
@@ -18,27 +18,13 @@ const calculateFop = async () => {
   isCalculating.value = true;
   try {
     const wsId = wsStore.currentWorkspace?.id || 1;
-    const res = await api.post("/analytics/fop-calculator", {
+    const res = await analyticsApi.calculateFop(wsId, {
       net_salary_uah: Number(netSalary.value),
       custom_software_cost_uah: Number(customSoftwareCost.value)
-    }, {
-      params: { workspace_id: wsId }
     });
-    calculationResult.value = res.data;
-  } catch (err: any) {
-    if (err.response?.status === 422) {
-      try {
-        const wsId = wsStore.currentWorkspace?.id || 1;
-        const res2 = await api.post("/analytics/fop-calculator", {
-          workspace_id: wsId,
-          net_salary_uah: Number(netSalary.value),
-          custom_software_cost_uah: Number(customSoftwareCost.value)
-        });
-        calculationResult.value = res2.data;
-      } catch (e) {
-        console.error(e);
-      }
-    }
+    calculationResult.value = res;
+  } catch (err) {
+    console.error(err);
   } finally {
     isCalculating.value = false;
   }
@@ -52,14 +38,14 @@ const exportPdf = () => {
   const wsId = wsStore.currentWorkspace?.id || 1;
   const net = netSalary.value || 65000;
   const soft = customSoftwareCost.value || 3200;
-  window.open(`http://127.0.0.1:8000/api/v1/analytics/export/fop-pdf?workspace_id=${wsId}&net_salary=${net}&software_cost=${soft}`, "_blank");
+  window.open(analyticsApi.getFopPdfUrl(wsId, net, soft), "_blank");
 };
 
 const exportCsv = () => {
   const wsId = wsStore.currentWorkspace?.id || 1;
   const net = netSalary.value || 65000;
   const soft = customSoftwareCost.value || 3200;
-  window.open(`http://127.0.0.1:8000/api/v1/analytics/export/fop-csv?workspace_id=${wsId}&net_salary=${net}&software_cost=${soft}`, "_blank");
+  window.open(analyticsApi.getFopCsvUrl(wsId, net, soft), "_blank");
 };
 </script>
 

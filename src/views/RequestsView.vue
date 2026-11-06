@@ -1,14 +1,14 @@
 ﻿<script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue";
 import { IconPlus, IconX, IconCheck, IconChevronLeft, IconChevronRight } from "@tabler/icons-vue";
-import api from "../api/axios";
+import { requestsApi, type ApprovalRequestItem } from "../api/requests";
 import { useAuthStore } from "../stores/auth";
 import { useWorkspaceStore } from "../stores/workspace";
 
 const authStore = useAuthStore();
 const wsStore = useWorkspaceStore();
 
-const getCachedRequests = () => {
+const getCachedRequests = (): ApprovalRequestItem[] => {
   try {
     const cached = localStorage.getItem("subtracker_requests_cache");
     return cached ? JSON.parse(cached) : [];
@@ -18,10 +18,10 @@ const getCachedRequests = () => {
 };
 
 const cachedRequests = getCachedRequests();
-const requests = ref<any[]>(cachedRequests);
+const requests = ref<ApprovalRequestItem[]>(cachedRequests);
 const isLoading = ref(cachedRequests.length === 0);
 const showCreateModal = ref(false);
-const reviewModalItem = ref<any | null>(null);
+const reviewModalItem = ref<ApprovalRequestItem | null>(null);
 const reviewComment = ref("");
 const reviewError = ref("");
 const isReviewing = ref(false);
@@ -32,17 +32,17 @@ const itemsPerPage = ref(12);
 const form = ref({
   software_name: "",
   estimated_cost: 45.0,
-  currency_code: "USD",
+  currency_code: "USD" as "USD" | "EUR" | "UAH",
   reason: ""
 });
 
 const fetchRequests = async () => {
   const wsId = wsStore.currentWorkspace?.id || 1;
   try {
-    const res = await api.get(`/requests/?workspace_id=${wsId}`);
-    if (Array.isArray(res.data)) {
-      requests.value = res.data;
-      localStorage.setItem("subtracker_requests_cache", JSON.stringify(res.data));
+    const data = await requestsApi.getAll(wsId);
+    if (Array.isArray(data)) {
+      requests.value = data;
+      localStorage.setItem("subtracker_requests_cache", JSON.stringify(data));
     }
   } catch (err) {
     console.error(err);
@@ -75,11 +75,10 @@ const paginatedRequests = computed(() => {
 const submitRequest = async () => {
   try {
     const wsId = wsStore.currentWorkspace?.id || 1;
-    const reqUserId = authStore.user?.id || undefined;
-    await api.post("/requests/", {
+    await requestsApi.create({
       ...form.value,
       workspace_id: wsId,
-      requester_id: reqUserId
+      requester_id: authStore.user?.id
     });
     showCreateModal.value = false;
     form.value.software_name = "";
@@ -99,21 +98,19 @@ const handleReview = async (decision: "Approved" | "Rejected") => {
   if (!reviewModalItem.value) return;
   reviewError.value = "";
   isReviewing.value = true;
-  const commentText = reviewComment.value.trim();
 
   try {
-    const reviewerUserId = authStore.user?.id || undefined;
-    await api.patch(`/requests/${reviewModalItem.value.id}/review`, {
+    await requestsApi.review(reviewModalItem.value.id, {
       status: decision,
-      review_comment: commentText,
-      reviewer_id: reviewerUserId
+      review_comment: reviewComment.value.trim(),
+      reviewer_id: authStore.user?.id
     });
     reviewModalItem.value = null;
     reviewComment.value = "";
     await fetchRequests();
   } catch (err: any) {
-    reviewError.value = err.response?.data?.detail 
-      ? JSON.stringify(err.response.data.detail) 
+    reviewError.value = err.response?.data?.detail
+      ? JSON.stringify(err.response.data.detail)
       : "Помилка при зміні статусу заявки.";
   } finally {
     isReviewing.value = false;
@@ -148,7 +145,7 @@ const handleReview = async (decision: "Approved" | "Rejected") => {
           <div class="flex items-start justify-between">
             <div class="flex items-center gap-2">
               <img :src="req.logo_url || 'https://www.google.com/s2/favicons?domain=google.com&sz=64'" class="w-6 h-6 rounded border border-[#E7E5E4] p-0.5 object-contain" />
-              <span class="text-xs font-black text-[#1e293b]">{{ req.software_name || req.service_name }}</span>
+              <span class="text-xs font-black text-[#1e293b]">{{ req.software_name }}</span>
             </div>
             <span
               :class="{
@@ -168,7 +165,7 @@ const handleReview = async (decision: "Approved" | "Rejected") => {
           </div>
 
           <p class="mt-2 text-xs text-[#44403C] bg-[#FAF8F5] p-2.5 rounded-xl border border-[#E7E5E4] italic">
-            "{{ req.reason || req.justification || 'Без додаткового обґрунтування' }}"
+            "{{ req.reason || 'Без додаткового обґрунтування' }}"
           </p>
 
           <div class="text-[10px] text-[#78716C] mt-3 space-y-1">
@@ -244,7 +241,7 @@ const handleReview = async (decision: "Approved" | "Rejected") => {
     <div v-if="reviewModalItem" class="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
       <div class="bg-white border border-[#E7E5E4] rounded-2xl max-w-sm w-full p-6 shadow-xl text-left">
         <div class="flex justify-between items-center">
-          <h3 class="font-bold text-base text-[#1e293b]">Розгляд: {{ reviewModalItem.software_name || reviewModalItem.service_name }}</h3>
+          <h3 class="font-bold text-base text-[#1e293b]">Розгляд: {{ reviewModalItem.software_name }}</h3>
           <button @click="reviewModalItem = null" class="text-[#78716C] hover:text-[#1e293b] p-1 cursor-pointer">
             <IconX class="w-4 h-4" :stroke-width="2.2" />
           </button>

@@ -1,5 +1,5 @@
-import { defineStore } from "pinia";
-import api from "../api/axios";
+﻿import { defineStore } from "pinia";
+import { workspaceApi } from "../api/workspaces";
 import { useAuthStore } from "./auth";
 import type { Workspace, WorkspaceMember, UserRole } from "../types";
 
@@ -11,18 +11,18 @@ export const useWorkspaceStore = defineStore("workspace", {
       if (stored) {
         cachedWs = JSON.parse(stored);
       }
-    } catch (e) {
+    } catch {
       cachedWs = null;
     }
 
-    let initialUsd = 41.52;
+    let initialUsd = 45.35;
     try {
       const storedRate = localStorage.getItem("subtracker_usd_rate");
       if (storedRate) {
-        initialUsd = Number(storedRate) || 41.52;
+        initialUsd = Number(storedRate) || 45.35;
       }
-    } catch (e) {
-      initialUsd = 41.52;
+    } catch {
+      initialUsd = 45.35;
     }
 
     return {
@@ -30,7 +30,7 @@ export const useWorkspaceStore = defineStore("workspace", {
       currentWorkspace: cachedWs as Workspace | null,
       members: [] as WorkspaceMember[],
       usdRate: initialUsd,
-      eurRate: 45.10,
+      eurRate: 48.10,
       isLoading: false
     };
   },
@@ -39,25 +39,25 @@ export const useWorkspaceStore = defineStore("workspace", {
     async fetchWorkspaces() {
       this.isLoading = true;
       try {
-        const res = await api.get<Workspace[]>("/workspaces/");
-        this.workspaces = res.data;
+        const data = await workspaceApi.getAll();
+        this.workspaces = data;
 
-        if (res.data.length > 0) {
+        if (data.length > 0) {
           if (!this.currentWorkspace) {
-            this.selectWorkspace(res.data[0]);
+            this.selectWorkspace(data[0]);
           } else {
-            const exists = res.data.find((w) => w.id === this.currentWorkspace?.id);
+            const exists = data.find((w) => w.id === this.currentWorkspace?.id);
             if (exists) {
               this.currentWorkspace = exists;
               localStorage.setItem("subtracker_current_ws", JSON.stringify(exists));
             } else {
-              this.selectWorkspace(res.data[0]);
+              this.selectWorkspace(data[0]);
             }
           }
         }
 
         if (this.currentWorkspace) {
-          this.syncCurrentUserRole(this.currentWorkspace.id);
+          await this.syncCurrentUserRole(this.currentWorkspace.id);
         }
       } catch (err) {
         console.error(err);
@@ -72,21 +72,21 @@ export const useWorkspaceStore = defineStore("workspace", {
         await authStore.fetchCurrentUser();
       }
       try {
-        const res = await api.get<any[]>(`/workspaces/${workspaceId}/members`);
-        this.members = res.data;
+        const data = await workspaceApi.getMembers(workspaceId);
+        this.members = data;
         const currentUserId = authStore.user?.id;
         const currentUserEmail = authStore.user?.email;
 
-        const found = res.data.find(
-          (m) =>
+        const found = data.find(
+          (m: any) =>
             (m.user && (m.user.id === currentUserId || m.user.email === currentUserEmail)) ||
             m.user_id === currentUserId ||
             m.email === currentUserEmail
         );
 
         if (found) {
-          const detectedRole = (found.role_name || found.role || "Member") as UserRole;
-          authStore.role = detectedRole;
+          const rawRole = (found as any).role_name || (found as any).role || "Member";
+          authStore.role = rawRole as UserRole;
         } else if (this.currentWorkspace?.owner_id === currentUserId) {
           authStore.role = "Admin";
         } else {
@@ -107,11 +107,11 @@ export const useWorkspaceStore = defineStore("workspace", {
       }
 
       try {
-        const res = await api.get("/currencies/");
-        if (res.data?.active_rates) {
-          const usd = res.data.active_rates.USD || 41.52;
+        const data = await workspaceApi.getRates();
+        if (data?.active_rates) {
+          const usd = data.active_rates.USD || 45.35;
           this.usdRate = usd;
-          this.eurRate = res.data.active_rates.EUR || 45.10;
+          this.eurRate = data.active_rates.EUR || 48.10;
           localStorage.setItem("subtracker_usd_rate", String(usd));
           localStorage.setItem("subtracker_usd_rate_time", String(Date.now()));
         }
