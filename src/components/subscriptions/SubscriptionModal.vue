@@ -1,7 +1,8 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, watch, onMounted } from "vue";
 import { IconX } from "@tabler/icons-vue";
 import api from "../../api/axios";
+import { subscriptionApi } from "../../api/subscriptions";
 
 const props = defineProps<{
   show: boolean;
@@ -36,15 +37,13 @@ const categories = ref<string[]>(getCachedCategories());
 
 const fetchCategories = async () => {
   try {
-    const res = await api.get("/categories/", {
-      params: { workspace_id: props.workspaceId || 1 }
-    });
-    if (Array.isArray(res.data) && res.data.length > 0) {
-      categories.value = res.data.map((c: any) => typeof c === "string" ? c : (c.name || c.title));
+    const resData = await subscriptionApi.getCategories(props.workspaceId || 1);
+    if (Array.isArray(resData) && resData.length > 0) {
+      categories.value = resData.map((c: any) => typeof c === "string" ? c : (c.name || c.title));
       localStorage.setItem("subtracker_categories_cache", JSON.stringify(categories.value));
     }
   } catch (err) {
-    console.error(err);
+    console.error("Помилка завантаження категорій у формі:", err);
   }
 };
 
