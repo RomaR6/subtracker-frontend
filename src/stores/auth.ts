@@ -72,17 +72,36 @@ export const useAuthStore = defineStore("auth", {
       }
     },
 
-    async loginGoogle(payload: GoogleAuthPayload): Promise<boolean> {
+    async loginGoogle(payload: GoogleAuthPayload): Promise<{ success: boolean; requires2fa?: boolean; userId?: number }> {
       this.isLoading = true;
       this.errorMessage = "";
       try {
         const data = await authApi.googleAuth(payload);
-        this.setSession(data.access_token, data.user);
-        return true;
+        if (data.requires_2fa && data.user_id) {
+          return { success: false, requires2fa: true, userId: data.user_id };
+        }
+        if (data.access_token && data.user) {
+          this.setSession(data.access_token, data.user);
+          return { success: true };
+        }
+        return { success: false };
       } catch (err: any) {
         this.errorMessage = err.response?.data?.detail
           ? JSON.stringify(err.response.data.detail)
           : "Не вдалося авторизуватись через Google.";
+        return { success: false };
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    async complete2FaLogin(userId: number): Promise<boolean> {
+      this.isLoading = true;
+      try {
+        const data = await authApi.exchange2FaToken(userId);
+        this.setSession(data.access_token, data.user);
+        return true;
+      } catch {
         return false;
       } finally {
         this.isLoading = false;

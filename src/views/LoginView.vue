@@ -18,6 +18,7 @@ const show2FaModal = ref(false);
 const totpCode = ref("");
 const totpError = ref("");
 const isVerifying = ref(false);
+const pendingGoogleUser = ref<any | null>(null);
 
 const showForgotModal = ref(false);
 const forgotEmail = ref("");
@@ -47,14 +48,39 @@ const handleGoogleAuth = () => {
           });
           const gUser = await gProfileRes.json();
 
-          const ok = await authStore.loginGoogle({
-            email: gUser.email,
+          const gEmail = gUser.email.toLowerCase().trim();
+          const is2FaEnabled = localStorage.getItem(`subtracker_2fa_${gEmail}_enabled`) === "true";
+
+          if (is2FaEnabled) {
+            pendingGoogleUser.value = {
+              email: gEmail,
+              first_name: gUser.given_name || gUser.name || "Google",
+              last_name: gUser.family_name || "Користувач",
+              company_name: "Мій IT-Простір"
+            };
+            email.value = gEmail;
+            show2FaModal.value = true;
+            totpCode.value = "";
+            totpError.value = "";
+            return;
+          }
+
+          const res = await authStore.loginGoogle({
+            email: gEmail,
             first_name: gUser.given_name || gUser.name || "Google",
             last_name: gUser.family_name || "Користувач",
             company_name: "Мій IT-Простір"
           });
 
-          if (ok) {
+          if (res.requires2fa) {
+            email.value = gEmail;
+            show2FaModal.value = true;
+            totpCode.value = "";
+            totpError.value = "";
+            return;
+          }
+
+          if (res.success) {
             router.push("/app/dashboard");
           }
         } catch {
@@ -71,11 +97,12 @@ const handleGoogleAuth = () => {
 
 const handleLogin = async () => {
   authStore.errorMessage = "";
-  const is2FaEnabled = localStorage.getItem(`subtracker_2fa_${email.value.trim()}_enabled`) === "true";
+  const cleanEmail = email.value.trim().toLowerCase();
+  const is2FaEnabled = localStorage.getItem(`subtracker_2fa_${cleanEmail}_enabled`) === "true";
 
   if (is2FaEnabled) {
     authStore.isLoading = true;
-    const ok = await authStore.login(email.value, password.value);
+    const ok = await authStore.login(cleanEmail, password.value);
     authStore.isLoading = false;
     if (ok) {
       show2FaModal.value = true;
@@ -85,7 +112,7 @@ const handleLogin = async () => {
     return;
   }
 
-  const success = await authStore.login(email.value, password.value);
+  const success = await authStore.login(cleanEmail, password.value);
   if (success) {
     router.push("/app/dashboard");
   }
@@ -100,12 +127,21 @@ const handle2FaVerify = async () => {
 
   isVerifying.value = true;
   try {
-    const secret = localStorage.getItem(`subtracker_2fa_${email.value.trim()}_secret`) || "JBSWY3DPEHPK3PXP";
+    const cleanEmail = email.value.trim().toLowerCase();
+    const secret = localStorage.getItem(`subtracker_2fa_${cleanEmail}_secret`) || "JBSWY3DPEHPK3PXP";
     const isValid = await verifyTotpToken(secret, totpCode.value);
 
     if (!isValid) {
       totpError.value = "Невірний або прострочений код TOTP. Спробуйте ще раз.";
       return;
+    }
+
+    if (pendingGoogleUser.value) {
+      const res = await authStore.loginGoogle(pendingGoogleUser.value);
+      pendingGoogleUser.value = null;
+      if (res.userId) {
+        await authStore.complete2FaLogin(res.userId);
+      }
     }
 
     show2FaModal.value = false;

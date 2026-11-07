@@ -8,6 +8,15 @@ export interface GoogleAuthPayload {
   company_name?: string;
 }
 
+export interface GoogleAuthResult {
+  access_token?: string;
+  token_type: string;
+  user?: User;
+  requires_2fa: boolean;
+  temp_email?: string;
+  user_id?: number;
+}
+
 export interface RegisterPayload {
   email: string;
   password: string;
@@ -32,8 +41,13 @@ export const authApi = {
     return res.data;
   },
 
-  async googleAuth(payload: GoogleAuthPayload): Promise<TokenResponse> {
-    const res = await api.post<TokenResponse>("/auth/google", payload);
+  async googleAuth(payload: GoogleAuthPayload): Promise<GoogleAuthResult> {
+    const res = await api.post<GoogleAuthResult>("/auth/google", payload);
+    return res.data;
+  },
+
+  async exchange2FaToken(userId: number): Promise<TokenResponse> {
+    const res = await api.post<TokenResponse>(`/auth/2fa/exchange-token?user_id=${userId}`);
     return res.data;
   },
 
