@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { useDialogStore } from "../stores/dialog";
 import { ref, computed, onMounted, watch } from "vue";
 import {
@@ -79,6 +79,13 @@ const showAddModal = ref(false);
 const showInvoiceModal = ref(false);
 const editingItem = ref<any | null>(null);
 const renewingId = ref<number | null>(null);
+
+const formatPeriod = (period: string | null | undefined): string => {
+  const p = (period || "monthly").toLowerCase().trim();
+  if (p === "yearly" || p === "annual" || p === "щорічно" || p === "річний") return "Щорічно";
+  if (p === "quarterly" || p === "щоквартально" || p === "квартальний") return "Щоквартально";
+  return "Щомісячно";
+};
 
 const fetchSubscriptions = async () => {
   const wsId = wsStore.currentWorkspace?.id || 1;
@@ -308,8 +315,8 @@ const exportPdf = () => {
               </td>
 
               <td class="py-3 px-4 text-[#44403C] font-medium">{{ item.category }}</td>
-              <td class="py-3 px-4 text-[#44403C] font-medium">{{ item.owner_name || "Загальний пул" }}</td>
-              <td class="py-3 px-4 capitalize text-[#78716C]">{{ item.billing_period }}</td>
+              <td class="py-3 px-4 text-[#44403C] font-medium">{{ item.owner_name || "Загальний пул команди" }}</td>
+              <td class="py-3 px-4 font-medium text-[#1e293b]">{{ formatPeriod(item.billing_period) }}</td>
 
               <td class="py-3 px-4 text-right">
                 <p class="font-black text-xs text-[#1e293b]">${{ item.cost_usd.toFixed(2) }}</p>

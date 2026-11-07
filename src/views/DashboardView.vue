@@ -10,6 +10,13 @@ import UpcomingPaymentsList from "../components/dashboard/UpcomingPaymentsList.v
 const wsStore = useWorkspaceStore();
 const activeCurrency = ref<"UAH" | "USD">("UAH");
 
+const formatPeriod = (period: string | null | undefined): string => {
+  const p = (period || "monthly").toLowerCase().trim();
+  if (p === "yearly" || p === "annual" || p === "щорічно" || p === "річний") return "Щорічно";
+  if (p === "quarterly" || p === "щоквартально" || p === "квартальний") return "Щоквартально";
+  return "Щомісячно";
+};
+
 const getCachedDashboard = (): AnalyticsDashboardData | null => {
   try {
     const cached = localStorage.getItem("subtracker_dashboard_cache");
@@ -230,8 +237,8 @@ onMounted(() => {
                 </div>
               </td>
               <td class="py-3 px-3 text-[#44403C]">{{ sub.category || 'DevTools' }}</td>
-              <td class="py-3 px-3 text-[#44403C] font-medium">{{ sub.owner_name || 'Олександр Кравченко' }}</td>
-              <td class="py-3 px-3 capitalize text-[#78716C]">{{ sub.billing_period }}</td>
+              <td class="py-3 px-3 text-[#44403C] font-medium">{{ sub.owner_name || 'Загальний пул команди' }}</td>
+              <td class="py-3 px-3 font-medium text-[#1e293b]">{{ formatPeriod(sub.billing_period) }}</td>
               <td class="py-3 px-3 font-bold text-[#1e293b]">
                 <div>${{ Number(sub.cost_usd).toFixed(2) }}</div>
                 <div class="text-[10px] text-[#78716C] font-normal">₴{{ Math.round(Number(sub.cost_uah || sub.cost_usd * (wsStore.usdRate || 45.35))).toLocaleString('uk-UA') }}</div>
